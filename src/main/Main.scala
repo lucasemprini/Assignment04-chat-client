@@ -7,7 +7,7 @@ import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.layout.AnchorPane
 import javafx.stage.Stage
-import view.{InitialWindowLayoutController, ViewController}
+import view.{InitialWindowController, MainViewController}
 
 class Main extends Application {
 
@@ -17,7 +17,7 @@ class Main extends Application {
 
   override def start(primaryStage: Stage) {
 
-    val initialWindow = new InitialWindowLayoutController
+    val initialWindow = new InitialWindowController
     val scene = initialWindow.selectDimensionScene
     primaryStage.setTitle(WINDOW_TITLE)
     primaryStage.setScene(scene)
@@ -34,14 +34,14 @@ class Main extends Application {
     * @param initialWindow il controller della finestra iniziale.
     * @param primaryStage  il primaryStage dell'applicazione.
     */
-  private def addListenerToOkButton(okButton: Button, initialWindow: InitialWindowLayoutController, primaryStage: Stage): Unit = {
+  private def addListenerToOkButton(okButton: Button, initialWindow: InitialWindowController, primaryStage: Stage): Unit = {
     okButton.setOnAction((_: ActionEvent) => {
       if(!(initialWindow.getUserField.getText.equals(null) || initialWindow.getUserField.getText.isEmpty)) {
 
         val userName = initialWindow.getUserField.getText()
         try {
           val loader = initGui(primaryStage, userName)
-          val lc = loader.getController.asInstanceOf[ViewController]
+          val lc = loader.getController.asInstanceOf[MainViewController]
           lc.setUser(userName)
         } catch {
           case e@(_: IOException | _: InterruptedException) =>
