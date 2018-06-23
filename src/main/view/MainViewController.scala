@@ -7,7 +7,7 @@ import javafx.scene.paint.Color
 import java.util
 
 import javafx.event.ActionEvent
-import javafx.fxml.{FXML, FXMLLoader}
+import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
 
 
@@ -43,7 +43,8 @@ class MainViewController {
   var choiceBox: ChoiceBox[_] = _
 
   //TODO private val guiActor: ActorRef = _
-  //TODO
+
+  //TODO cambiare TIPO dello user
   private var user = ""
   private var addCounter = 0
 
@@ -55,9 +56,12 @@ class MainViewController {
     * -Setta il listener del bottone di Add.
     */
   def initialize(): Unit = {
+    //TODO Creazione GUIACTOR:
+    //this.guiActor = ActorSystem.create("MySystem").actorOf(Props.create(classOf[Nothing], this.actorsList.getItems, this.mapOfChats, this.listOfMessages.getItems, this.labelActorInfo))
+
     this.setViewComponents(areDisabled = true, areWeInSend = false)
     this.setUpListView()
-    this.addButton.setOnAction((e: ActionEvent) => this.setDialogWindow())
+    this.addButton.setOnAction((_: ActionEvent) => this.setDialogWindow())
   }
 
   def setUser(user: String): Unit = {
@@ -97,6 +101,8 @@ class MainViewController {
     dialog.setResizable(true)
     dialog.getDialogPane.setPrefSize(MainViewController.DIALOG_PREF_WIDTH, MainViewController.DIALOG_PREF_HEIGHT)
     val result = dialog.showAndWait
+    //TODO invoke per add chat
+    //result.ifPresent(this.invokeGuiActorForAddActor)
   }
 
   /**
@@ -121,19 +127,27 @@ class MainViewController {
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
         val currentActor = this.actorsList.getSelectionModel.getSelectedItem
         if (!this.actorsList.getItems.isEmpty && currentActor != null) {
-          this.setViewComponents(areDisabled = false, areWeInSend = false)
+          //TODO invoke per selected chat
+          //this.invokeGuiActorForSelectedActor(currentActor)
 
+          this.setViewComponents(areDisabled = false, areWeInSend = false)
           this.listOfMessages.setItems(this.mapOfChats.get(currentActor))
 
           this.sendButton.setOnAction((_: ActionEvent) => {
-              this.setViewComponents(areDisabled = true, areWeInSend = true)
+            //TODO invoke per send msg
+            //this.invokeGuiActorForSendMsg(currentActor, this.getTextFromArea)
+            this.setViewComponents(areDisabled = true, areWeInSend = true)
           })
 
           this.removeButton.setOnAction((_: ActionEvent) => {
+            //TODO invoke per remove chat
+            //this.invokeGuiActorForRemoveActor(this.actorsList.getSelectionModel.getSelectedItem)
             this.setViewComponents(areDisabled = true, areWeInSend = false)
           })
         }
     })
   }
+
+  //TODO implement methods per invoke : guiActor.tell(...)
 }
 
