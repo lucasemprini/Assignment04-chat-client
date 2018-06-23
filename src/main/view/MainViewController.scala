@@ -13,13 +13,13 @@ import javafx.scene.input.MouseEvent
 
 object MainViewController {
   private val NO_MSG_STRING = "I don't wanna talk"
-  private val ACTOR_DEFAULT_NAME = "NewActor"
+  private val CHAT_DEFAULT_NAME = "NewChat"
   private val DIALOG_TITLE = "Name selection"
-  private val DIALOG_HEADER = "What's your name?"
+  private val DIALOG_HEADER = "What's the new chat's name?"
   private val DIALOG_CONTENT_TEXT = "Name:"
   private val DIALOG_PREF_HEIGHT = 120
   private val DIALOG_PREF_WIDTH = 280
-  private val LABEL_DEFAULT_TEXT = "Select an actor to send a message:"
+  private val LABEL_DEFAULT_TEXT = "Select a chat where to send a message:"
   private val LABEL_DEFAULT_COLOR = Color.valueOf("#bcb2b2")
 }
 
@@ -92,7 +92,7 @@ class MainViewController {
     * Metodo che crea una Dialog per dare un nome all'attore appena creato.
     */
   private def setDialogWindow(): Unit = {
-    val dialog = new TextInputDialog(MainViewController.ACTOR_DEFAULT_NAME + (if (this.addCounter == 0) ""
+    val dialog = new TextInputDialog(MainViewController.CHAT_DEFAULT_NAME + (if (this.addCounter == 0) ""
     else this.addCounter))
     this.addCounter += 1
     dialog.setTitle(MainViewController.DIALOG_TITLE)

@@ -54,13 +54,13 @@
             <bottom>
                <BorderPane BorderPane.alignment="CENTER">
                   <left>
-                     <Button fx:id="addButton" mnemonicParsing="false" text="+ Add Actor" BorderPane.alignment="CENTER">
+                     <Button fx:id="addButton" mnemonicParsing="false" text="+ New Chat" BorderPane.alignment="CENTER">
                         <font>
                            <Font size="18.0" />
                         </font></Button>
                   </left>
                   <right>
-                     <Button fx:id="removeButton" mnemonicParsing="false" text="Remove Actor -" BorderPane.alignment="CENTER">
+                     <Button fx:id="removeButton" mnemonicParsing="false" text="Delete Chat -" BorderPane.alignment="CENTER">
                         <font>
                            <Font size="18.0" />
                         </font></Button>
