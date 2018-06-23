@@ -1,7 +1,7 @@
 package view
 
-import akka.actor.ActorRef
-import javafx.collections.ObservableList
+import akka.actor.{ActorRef, ActorSystem, Props}
+import javafx.collections.{FXCollections, ObservableList}
 import javafx.scene.control._
 import javafx.scene.paint.Color
 import java.util
@@ -9,6 +9,10 @@ import java.util
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
+import model.actors.GUIActor
+import model.messages.{ChatSelectedMSg, NewChatButtonMsg, RemoveChatButtonMsg, SendButtonMsg}
+
+import scala.collection.immutable.HashMap
 
 
 object MainViewController {
@@ -24,7 +28,7 @@ object MainViewController {
 }
 
 class MainViewController {
-  private val mapOfChats = new util.HashMap[ActorRef, ObservableList[String]]
+  private val mapOfChats = new HashMap[ActorRef, ObservableList[String]]
   @FXML
   var listOfMessages: ListView[String] = _
   @FXML
@@ -40,9 +44,9 @@ class MainViewController {
   @FXML
   var removeButton: Button = _
   @FXML
-  var choiceBox: ChoiceBox[_] = _
+  var choiceBox: ChoiceBox[String] = _
 
-  //TODO private val guiActor: ActorRef = _
+  private var guiActor: ActorRef = _
 
   //TODO cambiare TIPO dello user
   private var user = ""
@@ -56,8 +60,10 @@ class MainViewController {
     * -Setta il listener del bottone di Add.
     */
   def initialize(): Unit = {
-    //TODO Creazione GUIACTOR:
-    //this.guiActor = ActorSystem.create("MySystem").actorOf(Props.create(classOf[Nothing], this.actorsList.getItems, this.mapOfChats, this.listOfMessages.getItems, this.labelActorInfo))
+
+    this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
+      new GUIActor(this.actorsList.getItems, this.mapOfChats,
+        this.listOfMessages.getItems, this.labelActorInfo)))
 
     this.setViewComponents(areDisabled = true, areWeInSend = false)
     this.setUpListView()
@@ -66,6 +72,8 @@ class MainViewController {
 
   def setUser(user: String): Unit = {
     this.user = user
+    this.choiceBox.setItems(FXCollections.observableArrayList[String]("GLOBAL CHATS", "MY CHATS - " + user))
+    this.choiceBox.getSelectionModel.selectFirst()
   }
 
   /**
@@ -83,7 +91,6 @@ class MainViewController {
     textArea.setDisable(areDisabled)
     labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
-    this.choiceBox.getSelectionModel.selectFirst()
     choiceBox.setPrefWidth(100)
     choiceBox.setStyle("-fx-font: 20px \"Default\";")
   }
@@ -101,8 +108,7 @@ class MainViewController {
     dialog.setResizable(true)
     dialog.getDialogPane.setPrefSize(MainViewController.DIALOG_PREF_WIDTH, MainViewController.DIALOG_PREF_HEIGHT)
     val result = dialog.showAndWait
-    //TODO invoke per add chat
-    //result.ifPresent(this.invokeGuiActorForAddActor)
+    result.ifPresent(res => invokeGuiActorForAddChat(res))
   }
 
   /**
@@ -127,25 +133,39 @@ class MainViewController {
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
         val currentActor = this.actorsList.getSelectionModel.getSelectedItem
         if (!this.actorsList.getItems.isEmpty && currentActor != null) {
-          //TODO invoke per selected chat
-          //this.invokeGuiActorForSelectedActor(currentActor)
+
+          this.invokeGuiActorForSelectedChat(currentActor)
 
           this.setViewComponents(areDisabled = false, areWeInSend = false)
-          this.listOfMessages.setItems(this.mapOfChats.get(currentActor))
+          this.listOfMessages.setItems(this.mapOfChats(currentActor))
 
           this.sendButton.setOnAction((_: ActionEvent) => {
-            //TODO invoke per send msg
-            //this.invokeGuiActorForSendMsg(currentActor, this.getTextFromArea)
+            this.invokeGuiActorForSendMsg(currentActor, this.getTextFromArea)
             this.setViewComponents(areDisabled = true, areWeInSend = true)
           })
 
           this.removeButton.setOnAction((_: ActionEvent) => {
-            //TODO invoke per remove chat
-            //this.invokeGuiActorForRemoveActor(this.actorsList.getSelectionModel.getSelectedItem)
+            this.invokeGuiActorForRemoveChat(this.actorsList.getSelectionModel.getSelectedItem)
             this.setViewComponents(areDisabled = true, areWeInSend = false)
           })
         }
     })
+  }
+
+  private def invokeGuiActorForAddChat(chatName: String): Unit = {
+    guiActor.tell(NewChatButtonMsg(this.actorsList.getItems, chatName), ActorRef.noSender)
+  }
+
+  private def invokeGuiActorForRemoveChat(toRemove:ActorRef): Unit = {
+    guiActor.tell(RemoveChatButtonMsg(toRemove), ActorRef.noSender)
+  }
+
+  private def invokeGuiActorForSendMsg(currentActor: ActorRef, msg: String): Unit = {
+    guiActor.tell(SendButtonMsg(msg, this.mapOfChats(currentActor), currentActor), ActorRef.noSender)
+  }
+
+  private def invokeGuiActorForSelectedChat(currentActor: ActorRef): Unit = {
+    guiActor.tell(ChatSelectedMSg(currentActor), ActorRef.noSender)
   }
 
   //TODO implement methods per invoke : guiActor.tell(...)

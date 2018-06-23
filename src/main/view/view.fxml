@@ -73,12 +73,6 @@
                                AnchorPane.leftAnchor="0.0"
                                AnchorPane.rightAnchor="0.0"
                                AnchorPane.topAnchor="0.0">
-                        <items>
-                            <FXCollections fx:factory="observableArrayList">
-                                <String fx:value="GLOBAL CHATS"/>
-                                <String fx:value="MY CHATS"/>
-                            </FXCollections>
-                        </items>
                     </ChoiceBox>
                 </AnchorPane>
             </top>
