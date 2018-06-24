@@ -1,6 +1,6 @@
 package model.actors
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, Props}
 import javafx.application.Platform
 import javafx.collections.{FXCollections, ObservableList}
 import javafx.scene.control.Label
@@ -10,13 +10,13 @@ import model.messages._
 import scala.collection.mutable
 
 class GUIActor(val users: ObservableList[ActorRef], var mapOfChats: mutable.Map[ActorRef, ObservableList[String]],
-               var currentChat: ObservableList[String], val actorLabel: Label) extends Actor {
+               var currentChat: ObservableList[String], val actorLabel: Label, val currentUser: String) extends Actor {
 
   override def receive(): Receive = {
       case SendButtonMsg(message, listOfMessages, sender) => //TODO invio del messaggio. Come gestirlo?
       case NewChatButtonMsg(_, chatName) =>
         Platform.runLater(() => {
-            val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
+            val newChat = context.actorOf(Props(new ChatActor(chatName, Seq(currentUser))), chatName)
             //registry.tell(new NewChatButtonMsg(chatName), newChat)
             //newActor.tell(new StartChatMsg(registry, getSelf), ActorRef.noSender)
 

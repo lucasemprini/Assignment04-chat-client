@@ -4,16 +4,14 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.collections.{FXCollections, ObservableList}
 import javafx.scene.control._
 import javafx.scene.paint.Color
-import java.util
-
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
-import model.actors.GUIActor
+import javafx.scene.text.Font
+import model.actors.{ChatActor, GUIActor}
 import model.messages.{ChatSelectedMSg, NewChatButtonMsg, RemoveChatButtonMsg, SendButtonMsg}
 
 import scala.collection.mutable
-import scala.collection.mutable.HashMap
 
 
 object MainViewController {
@@ -62,10 +60,6 @@ class MainViewController {
     */
   def initialize(): Unit = {
 
-    this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
-      new GUIActor(this.actorsList.getItems, this.mapOfChats,
-        this.listOfMessages.getItems, this.labelActorInfo)))
-
     this.setViewComponents(areDisabled = true, areWeInSend = false)
     this.setUpListView()
     this.addButton.setOnAction((_: ActionEvent) => this.setDialogWindow())
@@ -73,10 +67,20 @@ class MainViewController {
 
   def setUser(user: String): Unit = {
     this.user = user
+    this.setGUIActor()
+    this.setChoiceBox()
+  }
+
+  private def setGUIActor(): Unit = this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
+    new GUIActor(this.actorsList.getItems, this.mapOfChats,
+      this.listOfMessages.getItems, this.labelActorInfo, this.user)))
+
+  private def setChoiceBox(): Unit = {
+    this.choiceBox.setPrefWidth(100)
+    this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
     this.choiceBox.setItems(FXCollections.observableArrayList[String]("GLOBAL CHATS", "MY CHATS - " + user))
     this.choiceBox.getSelectionModel.selectFirst()
   }
-
   /**
     * Metodo che setta i componenti principali.
     *
@@ -92,8 +96,6 @@ class MainViewController {
     textArea.setDisable(areDisabled)
     labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
-    choiceBox.setPrefWidth(100)
-    choiceBox.setStyle("-fx-font: 20px \"Default\";")
   }
 
   /**
@@ -128,7 +130,10 @@ class MainViewController {
       override protected def updateItem(item: ActorRef, empty: Boolean): Unit = {
         super.updateItem(item, empty)
         if (empty) setText("")
-        else setText(item.path.name)
+        else {
+          setText(item.path.name)
+          setStyle("-fx-font: 16px \"Default\";")
+        }
       }
     })
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
