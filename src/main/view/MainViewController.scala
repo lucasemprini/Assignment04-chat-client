@@ -12,7 +12,8 @@ import javafx.scene.input.MouseEvent
 import model.actors.GUIActor
 import model.messages.{ChatSelectedMSg, NewChatButtonMsg, RemoveChatButtonMsg, SendButtonMsg}
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable
+import scala.collection.mutable.HashMap
 
 
 object MainViewController {
@@ -28,7 +29,7 @@ object MainViewController {
 }
 
 class MainViewController {
-  private val mapOfChats = new HashMap[ActorRef, ObservableList[String]]
+  private val mapOfChats = new mutable.HashMap[ActorRef, ObservableList[String]]
   @FXML
   var listOfMessages: ListView[String] = _
   @FXML
@@ -131,16 +132,15 @@ class MainViewController {
       }
     })
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
-        val currentActor = this.actorsList.getSelectionModel.getSelectedItem
-        if (!this.actorsList.getItems.isEmpty && currentActor != null) {
+        val currentChat = this.actorsList.getSelectionModel.getSelectedItem
+        if (!this.actorsList.getItems.isEmpty && currentChat != null) {
 
-          this.invokeGuiActorForSelectedChat(currentActor)
-
+          this.invokeGuiActorForSelectedChat(currentChat)
           this.setViewComponents(areDisabled = false, areWeInSend = false)
-          this.listOfMessages.setItems(this.mapOfChats(currentActor))
+          this.listOfMessages.setItems(this.mapOfChats(currentChat))
 
           this.sendButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForSendMsg(currentActor, this.getTextFromArea)
+            this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
             this.setViewComponents(areDisabled = true, areWeInSend = true)
           })
 

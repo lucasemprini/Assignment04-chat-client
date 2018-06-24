@@ -10,8 +10,10 @@ final case class SendButtonMsg(message: String, listOfMessages: ObservableList[S
 
 final case class NewChatButtonMsg(listOfChats: ObservableList[ActorRef], chatName: String)
 
-final case class RemoveChatButtonMsg(removeWho: ActorRef) //TODO Altra struttura dati per la Chat!!!
+final case class RemoveChatButtonMsg(removeWho: ActorRef)
 
 final case class GUIShowMsg(msg: String, sender: ActorRef, prefix: String) //TODO sender dovrebbe essere RestClient????
 
 final case class ChatSelectedMSg(selected: ActorRef) //TODO Altra struttura dati per la Chat!!!
+
+final case class CanExit(removeWho: ActorRef)
