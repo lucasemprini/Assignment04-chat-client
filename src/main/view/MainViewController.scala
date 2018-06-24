@@ -1,6 +1,7 @@
 package view
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.collections.{FXCollections, ObservableList}
 import javafx.scene.control._
 import javafx.scene.paint.Color
@@ -80,6 +81,11 @@ class MainViewController {
     this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
     this.choiceBox.setItems(FXCollections.observableArrayList[String]("GLOBAL CHATS", "MY CHATS - " + user))
     this.choiceBox.getSelectionModel.selectFirst()
+    this.choiceBox.getSelectionModel.selectedIndexProperty.addListener(new ChangeListener[Number]() {
+      override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, mewValue: Number): Unit = {
+        println(choiceBox.getItems.get(mewValue.asInstanceOf[Integer]))
+      }
+    })
   }
   /**
     * Metodo che setta i componenti principali.
