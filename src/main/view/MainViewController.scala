@@ -50,8 +50,8 @@ class MainViewController {
 
   private var guiActor: ActorRef = _
 
-  //TODO cambiare TIPO dello user
-  private var user = ""
+  //TODO cambiare TIPO dello userName ??
+  private var userName = ""
   private var addCounter = 0
 
   /**
@@ -68,8 +68,12 @@ class MainViewController {
     this.addButton.setOnAction((_: ActionEvent) => this.setDialogWindow())
   }
 
+  /**
+    * Metodo che setta lo username ricevuto dalla finestra iniziale.
+    * @param user lo username selezionato
+    */
   def setUser(user: String): Unit = {
-    this.user = user
+    this.userName = user
     this.setGUIActor()
     this.setChoiceBox()
   }
@@ -81,7 +85,7 @@ class MainViewController {
     new GUIActor(this.actorsList.getItems,
       this.mapOfChats,
       this.listOfMessages.getItems,
-      this.labelActorInfo, this.user)))
+      this.labelActorInfo, this.userName)))
 
   /**
     * Metodo che setta le choiceBox
@@ -90,13 +94,13 @@ class MainViewController {
     this.choiceBox.setPrefWidth(100)
     this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
     this.choiceBox.setItems(FXCollections.observableArrayList[String](
-      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user))
+      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + userName))
     this.choiceBox.getSelectionModel.selectFirst()
     this.choiceBox.getSelectionModel.selectedIndexProperty.addListener(new ChangeListener[Number]() {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
-        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user)) {
-          actorsList.getItems.stream().filter(c => c.members.contains(user))
+        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + userName)) {
+          actorsList.getItems.stream().filter(c => c.members.contains(userName))
         }
       }
     })
@@ -110,11 +114,11 @@ class MainViewController {
     *                    il bottone Remove a areDisabled.
     */
   private def setViewComponents(areDisabled: Boolean, areWeInSend: Boolean): Unit = {
-    sendButton.setDisable(areDisabled)
+    this.sendButton.setDisable(areDisabled)
     if (areWeInSend) textArea.clear()
-    else removeButton.setDisable(areDisabled)
-    textArea.setDisable(areDisabled)
-    labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
+    else this.removeButton.setDisable(areDisabled)
+    this.textArea.setDisable(areDisabled)
+    this.labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
   }
 
@@ -122,8 +126,8 @@ class MainViewController {
     * Metodo che crea una Dialog per dare un nome all'attore appena creato.
     */
   private def setDialogWindow(): Unit = {
-    val dialog = new TextInputDialog(MainViewController.CHAT_DEFAULT_NAME + (if (this.addCounter == 0) ""
-    else this.addCounter))
+    val dialog = new TextInputDialog(MainViewController.CHAT_DEFAULT_NAME
+      + (if (this.addCounter == 0) "" else this.addCounter))
     this.addCounter += 1
     dialog.setTitle(MainViewController.DIALOG_TITLE)
     dialog.setHeaderText(MainViewController.DIALOG_HEADER)
@@ -179,20 +183,42 @@ class MainViewController {
     })
   }
 
+
+  /**
+    * Metodo che invia un messaggio di NewChatMsg al GUIActor.
+    *
+    * @param chatName il nome della nuova chat.
+    */
   private def invokeGuiActorForAddChat(chatName: String): Unit = {
     guiActor.tell(NewChatButtonMsg(this.actorsList.getItems, chatName), ActorRef.noSender)
   }
 
-  private def invokeGuiActorForRemoveChat(toRemove:Chat): Unit = {
+  /**
+    * Metodo che invia un messaggio di RemoveChatButtonMsg al GUIActor.
+    *
+    * @param toRemove la chat da rimuovere.
+    */
+  private def invokeGuiActorForRemoveChat(toRemove: Chat): Unit = {
     guiActor.tell(RemoveChatButtonMsg(toRemove), ActorRef.noSender)
   }
 
+  /**
+    * Metodo che invia un messaggio di SendButtonMessageMsg al GUIActor.
+    *
+    * @param currentChat la chat su cui inviare il messaggio.
+    * @param msg  il messaggio da inviare.
+    */
   private def invokeGuiActorForSendMsg(currentChat: ActorRef, msg: String): Unit = {
     guiActor.tell(SendButtonMsg(msg, this.mapOfChats(currentChat), currentChat), ActorRef.noSender)
   }
 
-  private def invokeGuiActorForSelectedChat(currentActor: ActorRef): Unit = {
-    guiActor.tell(ChatSelectedMSg(currentActor), ActorRef.noSender)
+  /**
+    * Metodo che invia un messaggio di ChatSelectedMSg al GUIActor.
+    *
+    * @param currentChat la chat selezionata.
+    */
+  private def invokeGuiActorForSelectedChat(currentChat: ActorRef): Unit = {
+    guiActor.tell(ChatSelectedMSg(currentChat), ActorRef.noSender)
   }
 }
 
