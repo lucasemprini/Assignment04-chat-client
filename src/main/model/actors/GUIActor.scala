@@ -14,26 +14,26 @@ class GUIActor(val users: ObservableList[Chat], var mapOfChats: mutable.Map[Acto
                var currentChat: ObservableList[String], val actorLabel: Label, val currentUser: String) extends Actor {
 
   override def receive(): Receive = {
-      case SendButtonMsg(message, listOfMessages, sender) => //TODO invio del messaggio. Come gestirlo?
+      case SendButtonMsg(message, listOfMessages, sender) =>
+        //sender.tell(new SendMsg(message, listOfMessages), sender)
+        Platform.runLater(() => {
+          this.mapOfChats(sender).add(currentUser + ": " + message)
+        })
+
+        //sender.tell(GUIAcknowledgeMsg(message, sender), self) //TODO
       case NewChatButtonMsg(_, chatName) =>
         Platform.runLater(() => {
             val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
-            //registry.tell(new NewChatButtonMsg(chatName), newChat)
             //newActor.tell(new StartChatMsg(registry, getSelf), ActorRef.noSender)
-
             this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
 
-            val start = users.size == 0
             this.users.add(new Chat(chatName, Seq(currentUser), newChat))
-            //if (start) newChat.tell(new TakeToken(0), ActorRef.noSender)
-            //TODO GESTIONE DEL REGISTRY???
         })
-      case RemoveChatButtonMsg(removeWho)=> self.tell(CanExit(removeWho), ActorRef.noSender) //TODO rimozione chat. Come gestirlo?
-      case CanExit(removeWho) => Platform.runLater(() => {
-          this.users.remove(removeWho)
-          this.currentChat.clear()
-          this.mapOfChats -= removeWho.actor
-          context.stop(removeWho.actor)
+      case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
+        this.users.remove(removeWho)
+        this.currentChat.clear()
+        this.mapOfChats -= removeWho.actor
+        context.stop(removeWho.actor)
       })
       case GUIShowMsg(msg, sender, prefix) => //TODO aggiungere alla view il nuovo messaggio. Come gestirlo?
       case ChatSelectedMSg(selected) =>

@@ -25,6 +25,8 @@ object MainViewController {
   private val DIALOG_PREF_WIDTH = 280
   private val LABEL_DEFAULT_TEXT = "Select a chat where to send a message:"
   private val LABEL_DEFAULT_COLOR = Color.valueOf("#bcb2b2")
+  private val GLOBAL_CHATS = "GLOBAL CHATS"
+  private val MY_CHATS = "MY CHATS - "
 }
 
 class MainViewController {
@@ -72,20 +74,30 @@ class MainViewController {
     this.setChoiceBox()
   }
 
+  /**
+    * Metodo che crea il GUIActor
+    */
   private def setGUIActor(): Unit = this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
     new GUIActor(this.actorsList.getItems,
       this.mapOfChats,
       this.listOfMessages.getItems,
       this.labelActorInfo, this.user)))
 
+  /**
+    * Metodo che setta le choiceBox
+    */
   private def setChoiceBox(): Unit = {
     this.choiceBox.setPrefWidth(100)
     this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
-    this.choiceBox.setItems(FXCollections.observableArrayList[String]("GLOBAL CHATS", "MY CHATS - " + user))
+    this.choiceBox.setItems(FXCollections.observableArrayList[String](
+      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user))
     this.choiceBox.getSelectionModel.selectFirst()
     this.choiceBox.getSelectionModel.selectedIndexProperty.addListener(new ChangeListener[Number]() {
-      override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, mewValue: Number): Unit = {
-        println(choiceBox.getItems.get(mewValue.asInstanceOf[Integer]))
+      override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
+        println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
+        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user)) {
+          actorsList.getItems.stream().filter(c => c.members.contains(user))
+        }
       }
     })
   }
@@ -145,6 +157,7 @@ class MainViewController {
         }
       }
     })
+
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
         val currentChat = this.actorsList.getSelectionModel.getSelectedItem
         if (!this.actorsList.getItems.isEmpty && currentChat != null) {
@@ -174,14 +187,12 @@ class MainViewController {
     guiActor.tell(RemoveChatButtonMsg(toRemove), ActorRef.noSender)
   }
 
-  private def invokeGuiActorForSendMsg(currentActor: ActorRef, msg: String): Unit = {
-    guiActor.tell(SendButtonMsg(msg, this.mapOfChats(currentActor), currentActor), ActorRef.noSender)
+  private def invokeGuiActorForSendMsg(currentChat: ActorRef, msg: String): Unit = {
+    guiActor.tell(SendButtonMsg(msg, this.mapOfChats(currentChat), currentChat), ActorRef.noSender)
   }
 
   private def invokeGuiActorForSelectedChat(currentActor: ActorRef): Unit = {
     guiActor.tell(ChatSelectedMSg(currentActor), ActorRef.noSender)
   }
-
-  //TODO implement methods per invoke : guiActor.tell(...)
 }
 

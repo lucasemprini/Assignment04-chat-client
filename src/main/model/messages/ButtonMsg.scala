@@ -18,3 +18,5 @@ final case class GUIShowMsg(msg: String, sender: ActorRef, prefix: String) //TOD
 final case class ChatSelectedMSg(selected: ActorRef) //TODO Altra struttura dati per la Chat!!!
 
 final case class CanExit(removeWho: Chat)
+
+final case class GUIAcknowledgeMsg(message: String, sender: ActorRef)
