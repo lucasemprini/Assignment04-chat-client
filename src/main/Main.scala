@@ -21,9 +21,8 @@ class Main extends Application {
     val scene = initialWindow.selectDimensionScene
     primaryStage.setTitle(WINDOW_TITLE)
     primaryStage.setScene(scene)
-
     this.addListenerToOkButton(initialWindow.setUpOkButton(), initialWindow, primaryStage)
-
+    scene.getWindow.centerOnScreen()
     primaryStage.show()
   }
 
@@ -67,6 +66,7 @@ class Main extends Application {
       Platform.exit()
       System.exit(0)
     })
+    primaryStage.getScene.getWindow.centerOnScreen()
     loader
   }
 }

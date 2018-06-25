@@ -35,12 +35,12 @@ class GUIActor(val users: ObservableList[Chat], var mapOfChats: mutable.Map[Acto
         this.mapOfChats -= removeWho.actor
         context.stop(removeWho.actor)
       })
-      case GUIShowMsg(msg, sender, prefix) => //TODO aggiungere alla view il nuovo messaggio. Come gestirlo?
+      //case GUIShowMsg(msg, sender, prefix) => //TODO aggiungere alla view il nuovo messaggio. Come gestirlo?
       case ChatSelectedMSg(selected) =>
         Platform.runLater(() => {
             this.currentChat = mapOfChats(selected)
             this.actorLabel.setTextFill(Color.BLACK)
-            this.actorLabel.setText("Write on chat " + selected.path.name + "!")
+            this.actorLabel.setText("Write on chat \"" + selected.path.name + "\"!")
         })
     }
 }
