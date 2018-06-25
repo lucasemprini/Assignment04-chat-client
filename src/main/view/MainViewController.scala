@@ -146,15 +146,15 @@ class MainViewController {
       }
     })
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
-        val currentChat = this.actorsList.getSelectionModel.getSelectedItem.actor
+        val currentChat = this.actorsList.getSelectionModel.getSelectedItem
         if (!this.actorsList.getItems.isEmpty && currentChat != null) {
 
-          this.invokeGuiActorForSelectedChat(currentChat)
+          this.invokeGuiActorForSelectedChat(currentChat.actor)
           this.setViewComponents(areDisabled = false, areWeInSend = false)
-          this.listOfMessages.setItems(this.mapOfChats(currentChat))
+          this.listOfMessages.setItems(this.mapOfChats(currentChat.actor))
 
           this.sendButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
+            this.invokeGuiActorForSendMsg(currentChat.actor, this.getTextFromArea)
             this.setViewComponents(areDisabled = true, areWeInSend = true)
           })
 
@@ -170,7 +170,7 @@ class MainViewController {
     guiActor.tell(NewChatButtonMsg(this.actorsList.getItems, chatName), ActorRef.noSender)
   }
 
-  private def invokeGuiActorForRemoveChat(toRemove:ActorRef): Unit = {
+  private def invokeGuiActorForRemoveChat(toRemove:Chat): Unit = {
     guiActor.tell(RemoveChatButtonMsg(toRemove), ActorRef.noSender)
   }
 

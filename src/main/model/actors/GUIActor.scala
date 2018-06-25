@@ -28,12 +28,12 @@ class GUIActor(val users: ObservableList[Chat], var mapOfChats: mutable.Map[Acto
             //if (start) newChat.tell(new TakeToken(0), ActorRef.noSender)
             //TODO GESTIONE DEL REGISTRY???
         })
-      case RemoveChatButtonMsg(removeWho)=> //TODO rimozione chat. Come gestirlo?
+      case RemoveChatButtonMsg(removeWho)=> self.tell(CanExit(removeWho), ActorRef.noSender) //TODO rimozione chat. Come gestirlo?
       case CanExit(removeWho) => Platform.runLater(() => {
           this.users.remove(removeWho)
           this.currentChat.clear()
-          this.mapOfChats -= removeWho
-          context.stop(removeWho)
+          this.mapOfChats -= removeWho.actor
+          context.stop(removeWho.actor)
       })
       case GUIShowMsg(msg, sender, prefix) => //TODO aggiungere alla view il nuovo messaggio. Come gestirlo?
       case ChatSelectedMSg(selected) =>
