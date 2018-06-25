@@ -2,13 +2,14 @@ package model.messages
 
 import akka.actor.ActorRef
 import javafx.collections.ObservableList
+import model.Chat
 
 trait ButtonMsg{}
 
 //TODO whoSends dovrebbe essere RestClient????
 final case class SendButtonMsg(message: String, listOfMessages: ObservableList[String], sender: ActorRef )
 
-final case class NewChatButtonMsg(listOfChats: ObservableList[ActorRef], chatName: String)
+final case class NewChatButtonMsg(listOfChats: ObservableList[Chat], chatName: String)
 
 final case class RemoveChatButtonMsg(removeWho: ActorRef)
 

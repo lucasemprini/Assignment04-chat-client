@@ -8,8 +8,8 @@ import javafx.scene.paint.Color
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
-import javafx.scene.text.Font
-import model.actors.{ChatActor, GUIActor}
+import model.Chat
+import model.actors.GUIActor
 import model.messages.{ChatSelectedMSg, NewChatButtonMsg, RemoveChatButtonMsg, SendButtonMsg}
 
 import scala.collection.mutable
@@ -32,7 +32,7 @@ class MainViewController {
   @FXML
   var listOfMessages: ListView[String] = _
   @FXML
-  var actorsList: ListView[ActorRef] = _
+  var actorsList: ListView[Chat] = _
   @FXML
   var textArea: TextArea = _
   @FXML
@@ -73,8 +73,10 @@ class MainViewController {
   }
 
   private def setGUIActor(): Unit = this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
-    new GUIActor(this.actorsList.getItems, this.mapOfChats,
-      this.listOfMessages.getItems, this.labelActorInfo, this.user)))
+    new GUIActor(this.actorsList.getItems,
+      this.mapOfChats,
+      this.listOfMessages.getItems,
+      this.labelActorInfo, this.user)))
 
   private def setChoiceBox(): Unit = {
     this.choiceBox.setPrefWidth(100)
@@ -132,18 +134,19 @@ class MainViewController {
     * Metodo che setta la ListView di attori con gli opportuni listeners.
     */
   private def setUpListView(): Unit = {
-    this.actorsList.setCellFactory((_: ListView[ActorRef]) => new ListCell[ActorRef]() {
-      override protected def updateItem(item: ActorRef, empty: Boolean): Unit = {
+    this.actorsList.setCellFactory((_: ListView[Chat]) => new ListCell[Chat]() {
+      override protected def updateItem(item: Chat, empty: Boolean): Unit = {
         super.updateItem(item, empty)
         if (empty) setText("")
         else {
-          setText(item.path.name)
+          setText(item.chatName + "\n"
+            + " - Members: " + item.members.mkString(", "))
           setStyle("-fx-font: 16px \"Default\";")
         }
       }
     })
     this.actorsList.setOnMouseClicked((_: MouseEvent) => {
-        val currentChat = this.actorsList.getSelectionModel.getSelectedItem
+        val currentChat = this.actorsList.getSelectionModel.getSelectedItem.actor
         if (!this.actorsList.getItems.isEmpty && currentChat != null) {
 
           this.invokeGuiActorForSelectedChat(currentChat)
@@ -156,7 +159,7 @@ class MainViewController {
           })
 
           this.removeButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForRemoveChat(this.actorsList.getSelectionModel.getSelectedItem)
+            this.invokeGuiActorForRemoveChat(currentChat)
             this.setViewComponents(areDisabled = true, areWeInSend = false)
           })
         }
