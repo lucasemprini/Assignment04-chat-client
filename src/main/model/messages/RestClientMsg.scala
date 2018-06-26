@@ -4,6 +4,8 @@ import akka.actor.ActorRef
 
 final case class UserMsg(id: String)
 
+final case class UserRes(user: User)
+
 final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
 final case class GetChatMsg(id: String)
