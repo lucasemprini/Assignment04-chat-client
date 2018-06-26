@@ -3,6 +3,7 @@ package model.messages
 import akka.actor.ActorRef
 import javafx.collections.ObservableList
 import model.ChatWrapper
+import view.MainViewController
 
 trait ButtonMsg{}
 
@@ -20,3 +21,5 @@ final case class ChatSelectedMSg(selected: ActorRef) //TODO Altra struttura dati
 final case class CanExit(removeWho: ChatWrapper)
 
 final case class GUIAcknowledgeMsg(message: String, sender: ActorRef)
+
+final case class CreateMainViewMsg(userId: String, layoutController: MainViewController)

@@ -1,5 +1,6 @@
 import java.io.IOException
 
+import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.application.{Application, Platform}
 import javafx.event.ActionEvent
 import javafx.fxml.FXMLLoader
@@ -9,6 +10,8 @@ import javafx.scene.control.ButtonBar.ButtonData
 import javafx.scene.control.{Alert, Button, ButtonType}
 import javafx.scene.layout.AnchorPane
 import javafx.stage.Stage
+import model.actors.PreGUIActor
+import model.messages.CreateMainViewMsg
 import view.{InitialWindowController, MainViewController}
 
 class Main extends Application {
@@ -16,6 +19,7 @@ class Main extends Application {
   val DEBUG = true
   private val LAYOUT_PATH = "/view/view.fxml"
   private val WINDOW_TITLE = "BETTER ACTORS CHAT"
+  private val preActor = ActorSystem.create("MySystem").actorOf(Props(new PreGUIActor()))
 
   override def start(primaryStage: Stage) {
 
@@ -43,11 +47,11 @@ class Main extends Application {
           //TODO
           val yesToNewAccount = this.createAlert()
         }
-        val userName = initialWindow.getUserField.getText()
+        val userId = initialWindow.getUserField.getText()
         try {
-          val loader = initGui(primaryStage, userName)
+          val loader = initGui(primaryStage, userId)
           val lc = loader.getController.asInstanceOf[MainViewController]
-          lc.setUser(userName)
+          this.preActor.tell(CreateMainViewMsg(userId, lc), ActorRef.noSender)
         } catch {
           case e@(_: IOException | _: InterruptedException) =>
             e.printStackTrace()

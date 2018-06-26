@@ -11,13 +11,13 @@ import model.messages._
 import scala.collection.mutable
 
 class GUIActor(val users: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ActorRef, ObservableList[String]],
-               var currentChat: ObservableList[String], val actorLabel: Label, val currentUser: String) extends Actor {
+               var currentChat: ObservableList[String], val actorLabel: Label, val currentUser: User) extends Actor {
 
   override def receive(): Receive = {
       case SendButtonMsg(message, listOfMessages, sender) =>
         //sender.tell(new SendMsg(message, listOfMessages), sender)
         Platform.runLater(() => {
-          this.mapOfChats(sender).add(currentUser + ": " + message)
+          this.mapOfChats(sender).add(currentUser.getName + ": " + message)
         })
 
         //sender.tell(GUIAcknowledgeMsg(message, sender), self) //TODO
@@ -27,7 +27,7 @@ class GUIActor(val users: ObservableList[ChatWrapper], var mapOfChats: mutable.M
             //newActor.tell(new StartChatMsg(registry, getSelf), ActorRef.noSender)
             this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
 
-            this.users.add(new ChatWrapper(chatName, Seq(currentUser), newChat))
+            this.users.add(new ChatWrapper(chatName, Seq(currentUser.getId), newChat))
         })
       case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
         this.users.remove(removeWho)

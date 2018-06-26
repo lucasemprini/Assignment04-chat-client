@@ -10,7 +10,7 @@ import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
 import model.ChatWrapper
 import model.actors.GUIActor
-import model.messages.{ChatSelectedMSg, NewChatButtonMsg, RemoveChatButtonMsg, SendButtonMsg}
+import model.messages._
 
 import scala.collection.mutable
 
@@ -49,9 +49,8 @@ class MainViewController {
   var choiceBox: ChoiceBox[String] = _
 
   private var guiActor: ActorRef = _
-
-  //TODO cambiare TIPO dello userName ??
-  private var userName = ""
+  //TODO cambiare TIPO dello user ??
+  private var user:User = _
   private var addCounter = 0
 
   /**
@@ -70,10 +69,11 @@ class MainViewController {
 
   /**
     * Metodo che setta lo username ricevuto dalla finestra iniziale.
-    * @param user lo username selezionato
+    * @param userId lo username selezionato
+    * @param userName il nome dello user
     */
-  def setUser(user: String): Unit = {
-    this.userName = user
+  def setUser(userId: String, userName: String): Unit = {
+    this.user = new User(userId, userName)
     this.setGUIActor()
     this.setChoiceBox()
   }
@@ -82,10 +82,11 @@ class MainViewController {
     * Metodo che crea il GUIActor
     */
   private def setGUIActor(): Unit = this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
-    new GUIActor(this.actorsList.getItems,
+    new GUIActor(
+      this.actorsList.getItems,
       this.mapOfChats,
       this.listOfMessages.getItems,
-      this.labelActorInfo, this.userName)))
+      this.labelActorInfo, this.user)))
 
   /**
     * Metodo che setta le choiceBox
@@ -94,13 +95,13 @@ class MainViewController {
     this.choiceBox.setPrefWidth(100)
     this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
     this.choiceBox.setItems(FXCollections.observableArrayList[String](
-      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + userName))
+      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user))
     this.choiceBox.getSelectionModel.selectFirst()
     this.choiceBox.getSelectionModel.selectedIndexProperty.addListener(new ChangeListener[Number]() {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
-        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + userName)) {
-          actorsList.getItems.stream().filter(c => c.members.contains(userName))
+        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user)) {
+          actorsList.getItems.stream().filter(c => c.members.contains(user))
         }
       }
     })
