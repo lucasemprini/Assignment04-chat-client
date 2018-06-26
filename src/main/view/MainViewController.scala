@@ -8,7 +8,7 @@ import javafx.scene.paint.Color
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
-import model.Chat
+import model.ChatWrapper
 import model.actors.GUIActor
 import model.messages.{ChatSelectedMSg, NewChatButtonMsg, RemoveChatButtonMsg, SendButtonMsg}
 
@@ -18,7 +18,7 @@ import scala.collection.mutable
 object MainViewController {
   private val NO_MSG_STRING = "I don't wanna talk"
   private val CHAT_DEFAULT_NAME = "NewChat"
-  private val DIALOG_TITLE = "Name selection"
+  private val DIALOG_TITLE = "Name the Chat"
   private val DIALOG_HEADER = "What's the new chat's name?"
   private val DIALOG_CONTENT_TEXT = "Name:"
   private val DIALOG_PREF_HEIGHT = 120
@@ -34,7 +34,7 @@ class MainViewController {
   @FXML
   var listOfMessages: ListView[String] = _
   @FXML
-  var actorsList: ListView[Chat] = _
+  var actorsList: ListView[ChatWrapper] = _
   @FXML
   var textArea: TextArea = _
   @FXML
@@ -150,8 +150,8 @@ class MainViewController {
     * Metodo che setta la ListView di attori con gli opportuni listeners.
     */
   private def setUpListView(): Unit = {
-    this.actorsList.setCellFactory((_: ListView[Chat]) => new ListCell[Chat]() {
-      override protected def updateItem(item: Chat, empty: Boolean): Unit = {
+    this.actorsList.setCellFactory((_: ListView[ChatWrapper]) => new ListCell[ChatWrapper]() {
+      override protected def updateItem(item: ChatWrapper, empty: Boolean): Unit = {
         super.updateItem(item, empty)
         if (empty) setText("")
         else {
@@ -198,7 +198,7 @@ class MainViewController {
     *
     * @param toRemove la chat da rimuovere.
     */
-  private def invokeGuiActorForRemoveChat(toRemove: Chat): Unit = {
+  private def invokeGuiActorForRemoveChat(toRemove: ChatWrapper): Unit = {
     guiActor.tell(RemoveChatButtonMsg(toRemove), ActorRef.noSender)
   }
 

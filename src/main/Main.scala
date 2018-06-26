@@ -4,7 +4,9 @@ import javafx.application.{Application, Platform}
 import javafx.event.ActionEvent
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
-import javafx.scene.control.Button
+import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.ButtonBar.ButtonData
+import javafx.scene.control.{Alert, Button, ButtonType}
 import javafx.scene.layout.AnchorPane
 import javafx.stage.Stage
 import view.{InitialWindowController, MainViewController}
@@ -37,6 +39,10 @@ class Main extends Application {
     okButton.setOnAction((_: ActionEvent) => {
       if(!(initialWindow.getUserField.getText.equals(null) || initialWindow.getUserField.getText.isEmpty)) {
 
+        if(true) {
+          //TODO
+          val yesToNewAccount = this.createAlert()
+        }
         val userName = initialWindow.getUserField.getText()
         try {
           val loader = initGui(primaryStage, userName)
@@ -68,6 +74,19 @@ class Main extends Application {
     })
     primaryStage.getScene.getWindow.centerOnScreen()
     loader
+  }
+
+  private def createAlert(): Boolean = {
+    val alert = new Alert(AlertType.WARNING)
+    alert.setTitle("The Username does not exists!")
+    alert.setHeaderText("The Username you provided does not exist on this Server!")
+    alert.setContentText("Do you want to create a New Account?")
+
+    val buttonTypeYes = new ButtonType("Yes", ButtonData.YES)
+    val buttonTypeCancel = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE)
+
+    alert.getButtonTypes.setAll(buttonTypeYes, buttonTypeCancel)
+    alert.showAndWait.get eq buttonTypeYes
   }
 }
 

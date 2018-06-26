@@ -5,12 +5,12 @@ import javafx.application.Platform
 import javafx.collections.{FXCollections, ObservableList}
 import javafx.scene.control.Label
 import javafx.scene.paint.Color
-import model.Chat
+import model.ChatWrapper
 import model.messages._
 
 import scala.collection.mutable
 
-class GUIActor(val users: ObservableList[Chat], var mapOfChats: mutable.Map[ActorRef, ObservableList[String]],
+class GUIActor(val users: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ActorRef, ObservableList[String]],
                var currentChat: ObservableList[String], val actorLabel: Label, val currentUser: String) extends Actor {
 
   override def receive(): Receive = {
@@ -27,7 +27,7 @@ class GUIActor(val users: ObservableList[Chat], var mapOfChats: mutable.Map[Acto
             //newActor.tell(new StartChatMsg(registry, getSelf), ActorRef.noSender)
             this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
 
-            this.users.add(new Chat(chatName, Seq(currentUser), newChat))
+            this.users.add(new ChatWrapper(chatName, Seq(currentUser), newChat))
         })
       case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
         this.users.remove(removeWho)
