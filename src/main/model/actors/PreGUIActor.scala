@@ -1,6 +1,7 @@
 package model.actors
 
 import akka.actor.{Actor, ActorSystem, Props}
+import javafx.application.Platform
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
 import model.messages._
@@ -15,10 +16,9 @@ class PreGUIActor extends Actor {
     case CreateMainViewMsg(userId, lc) =>
       this.layoutController = lc
       this.preActor.tell(UserMsg(userId), self)
-    case User (id, name) =>
-    //layoutController.setUser(new User(userId, userName))
-    case ErrorUserReq(detail) => createAlertDialog("User", detail)
-    case ErrorChatsReq(detail) => createAlertDialog("Chats", detail)
+    case UserRes (user) => layoutController.setUser(user)
+    case ErrorUserReq(detail) => Platform.runLater(() => createAlertDialog("User", detail))
+    case ErrorChatsReq(detail) => Platform.runLater(() =>createAlertDialog("Chats", detail))
   }
 
   def createAlertDialog(what: String, detail: String): Unit = {

@@ -50,7 +50,7 @@ class MainViewController {
 
   private var guiActor: ActorRef = _
   //TODO cambiare TIPO dello user ??
-  private var user:User = _
+  private var user: User = _
   private var addCounter = 0
 
   /**
@@ -69,11 +69,10 @@ class MainViewController {
 
   /**
     * Metodo che setta lo username ricevuto dalla finestra iniziale.
-    * @param userId lo username selezionato
-    * @param userName il nome dello user
+    * @param user lo user preso dal DB
     */
-  def setUser(userId: String, userName: String): Unit = {
-    this.user = new User(userId, userName)
+  def setUser(user: User): Unit = {
+    this.user = user
     this.setGUIActor()
     this.setChoiceBox()
   }
@@ -101,7 +100,7 @@ class MainViewController {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
         if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user)) {
-          actorsList.getItems.stream().filter(c => c.members.contains(user))
+          actorsList.getItems.stream().filter(c => c.members.contains(user.getId))
         }
       }
     })
