@@ -41,13 +41,18 @@ class RestClient extends Actor {
     *
     *   - UserChatsMsg(msgUser, sender)
     *       Esegue una GET /user/:id/chats
-    *       POS: Risponde con un messaggio User contenente l'utente compilato con i propri dati e le sue chats
+    *       POS: Risponde con un messaggio UserRes(user) contenente l'utente compilato con i propri dati e le sue chats
     *       NEG: Risponde con un ErrorUserReq o ErrorChatsReq in base che chi ha chiamato la ricerca cercasse l'utente o la sua lista di chat.
     *
     *   - GetChatMsg(chatId)
     *       Esegue una GET /chats/:id
     *       POS: Risponde con un messaggio Chat contente l'id della chat e una lista di messaggio
     *       NEG: Risponde con un messaggio ErrorChatReq(details)
+    *
+    *   - SetUserMsg(user)
+    *       Esegue un POST /user/:id
+    *         POS: Risponde con un messaggio OkSetUserMsg, ciò significa che è andato tutto bene
+    *         NEG: Risponde con un messaggio ErrorSetUser(details)
     * @return
     */
   override def receive: Receive = {
@@ -83,7 +88,7 @@ class RestClient extends Actor {
           val data = Json.fromObjectString(body)
           if (data.getBoolean(RESULT)) {
             data.getJsonArray("chats").getList.forEach(e => user.addChat(e.toString))
-            actSender ! user
+            actSender ! UserRes(user)
           } else {
             if (fromUser) {
               actSender ! ErrorUserReq(data.getString(DETAILS))
@@ -139,7 +144,25 @@ class RestClient extends Actor {
 
     case SetUserMsg(user) =>
       val actSender: ActorRef = sender()
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(HttpMethods.POST, URL_PREFIX + "/user/" + user.getId))
+      val responseFuture: Future[HttpResponse] = Http().singleRequest(
+                                                                  HttpRequest(method = HttpMethods.POST,
+                                                                    uri = Uri(URL_PREFIX + "/user/" + user.getId),
+                                                                    entity = FormData(user.queryParams).toEntity(HttpCharsets.`UTF-8`)))
+
+      handleResponse(responseFuture, resBody => {
+        resBody.map(body => {
+          if (Json.fromObjectString(body).getBoolean(RESULT)) {
+            println("EHILLAAAAA")
+            actSender ! OKSetUserMsg
+          } else {
+            println("SAD")
+            actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+          }
+        })
+      }, failRes => {
+        println("fail, status code: " + failRes.status)
+        actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+      })
 
   }
 

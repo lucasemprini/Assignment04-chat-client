@@ -11,7 +11,7 @@ trait RestObject {
     Json.encode(this)
   }
 
-  def queryParams: Unit = {
+  def queryParams: Map[String, String] = {
     val map: mutable.HashMap[String, String] = mutable.HashMap()
 
     this.getClass.getMethods
@@ -20,9 +20,10 @@ trait RestObject {
       .foreach(m => {
         val key = m.getName.replaceFirst("get", "").toLowerCase
         val value = m.invoke(this)
-
-        println("Key: " + key + " / value: " + value)
+        map.put(key, value.toString)
       })
+
+    map.toMap
   }
 }
 
