@@ -13,6 +13,7 @@ import model.actors.GUIActor
 import model.messages._
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 
 object MainViewController {
@@ -103,7 +104,7 @@ class MainViewController {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
         if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user.getName)) {
-          chatList.getItems.stream().filter(c => c.members.contains(user.getId))
+          chatList.getItems.stream().filter(c => c.members.contains(user))
         }
       }
     })
@@ -193,7 +194,8 @@ class MainViewController {
     * @param chatName il nome della nuova chat.
     */
   private def invokeGuiActorForAddChat(chatName: String): Unit = {
-    guiActor.tell(NewChatButtonMsg(this.chatList.getItems, chatName), ActorRef.noSender)
+    //TODO getNewChatID????
+    guiActor.tell(NewChatButtonMsg(this.chatList.getItems, chatName, new Chat(chatName, ListBuffer.empty)), ActorRef.noSender)
   }
 
   /**

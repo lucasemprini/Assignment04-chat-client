@@ -1,12 +1,13 @@
 package model.messages
 
 import akka.actor.ActorRef
+import model.ChatWrapper
 
 final case class UserMsg(id: String)
 
 final case class UserRes(user: User)
 
-final case class ChatRes(chat: Chat)
+final case class ChatRes(chat: ChatWrapper)
 
 final case class UserChatsMsg(user: User, sender: ActorRef = null)
 

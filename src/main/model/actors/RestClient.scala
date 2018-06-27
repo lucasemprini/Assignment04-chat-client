@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.{HttpResponse, _}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import io.vertx.lang.scala.json.{Json, JsonObject}
+import model.ChatWrapper
 import model.actors.RestClient._
 import model.messages._
 
@@ -119,7 +120,7 @@ class RestClient extends Actor {
               val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
               messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
             })
-            actSender ! ChatRes(new Chat(chatId, messages))
+            actSender ! ChatRes(new ChatWrapper(new Chat(chatId, messages), Seq[User]()))
           } else {
             actSender ! ErrorChatReq(data.getString(DETAILS))
           }

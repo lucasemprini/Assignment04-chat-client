@@ -34,12 +34,12 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.mapOfChats(sender).add(currentUser.getName + ": " + message)
       })
       //TODO this.restClient.nonLoSO -> Inviare un messaggio??
-    case NewChatButtonMsg(_, chatName) =>
+    case NewChatButtonMsg(_, chatName, chat) =>
       Platform.runLater(() => {
-        val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
+        val newChat = context.actorOf(Props(new ChatActor(chat.getId)), chat.getId)
         //TODO notifica lo User con RestClient -> Creazione di una nuova Chat??
         this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
-        this.chats.add(new ChatWrapper(chatName, Seq(currentUser.getId), newChat))
+        this.chats.add(new ChatWrapper(chatName, chat, Seq(currentUser), newChat))
       })
     case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
       this.chats.remove(removeWho)

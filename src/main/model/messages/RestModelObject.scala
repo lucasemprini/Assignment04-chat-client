@@ -38,6 +38,8 @@ class User(id: String,
   def getName: String = name
 
   def addChat(chat: String): Unit = chats += chat
+
+  override def toString: String = name
 }
 
 class Message(timestamp: Long,

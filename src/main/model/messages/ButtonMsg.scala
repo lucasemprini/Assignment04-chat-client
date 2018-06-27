@@ -11,7 +11,7 @@ trait ButtonMsg{}
 //TODO whoSends dovrebbe essere RestClient????
 final case class SendButtonMsg(message: String, listOfMessages: ObservableList[String], sender: ActorRef )
 
-final case class NewChatButtonMsg(listOfChats: ObservableList[ChatWrapper], chatName: String)
+final case class NewChatButtonMsg(listOfChats: ObservableList[ChatWrapper], chatName: String, chat: Chat)
 
 final case class RemoveChatButtonMsg(removeWho: ChatWrapper)
 
