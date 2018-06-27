@@ -34,7 +34,7 @@ class MainViewController {
   @FXML
   var listOfMessages: ListView[String] = _
   @FXML
-  var actorsList: ListView[ChatWrapper] = _
+  var chatList: ListView[ChatWrapper] = _
   @FXML
   var textArea: TextArea = _
   @FXML
@@ -51,56 +51,59 @@ class MainViewController {
   private var guiActor: ActorRef = _
   //TODO cambiare TIPO dello user ??
   private var user: User = _
+  private var restClient: ActorRef = _
   private var addCounter = 0
 
   /**
-    * Metodo che inizializza automaticamente la GUI:
-    * -Crea il GUIActor
-    * -Setta le componenti principali come NOT enambled.
-    * -Setta la listView degli attori (inserendovi gli appositi Listeners)
-    * -Setta il listener del bottone di Add.
+    * Metodo che inizializza automaticamente la GUI.
     */
-  def initialize(): Unit = {
+  def initialize(): Unit = {}
 
+  /**
+    * Metodo che setta lo username ricevuto dalla finestra iniziale e setta tutte le componenti che ne dipendono.
+    * @param user lo user preso dal DB specificato dall'utente
+    */
+  def setUser(user: User, restClient: ActorRef): Unit = {
+    this.user = user
+    this.restClient = restClient
+    //this.chatList.setItems()
+    this.setGUIActor()
+    this.setChoiceBox()
     this.setViewComponents(areDisabled = true, areWeInSend = false)
     this.setUpListView()
     this.addButton.setOnAction((_: ActionEvent) => this.setDialogWindow())
   }
 
   /**
-    * Metodo che setta lo username ricevuto dalla finestra iniziale.
-    * @param user lo user preso dal DB
+    * Metodo che crea il GUIActor.
     */
-  def setUser(user: User): Unit = {
-    this.user = user
-    this.setGUIActor()
-    this.setChoiceBox()
+  private def setGUIActor(): Unit = {
+    this.guiActor =
+    ActorSystem.create("MySystem").actorOf(Props(new GUIActor(
+        this.chatList.getItems,
+        this.mapOfChats,
+        this.listOfMessages.getItems,
+        this.labelActorInfo,
+        this.user,
+        this.restClient)))
+    this.guiActor.tell(SetupViewMsg(), ActorRef.noSender)
   }
 
-  /**
-    * Metodo che crea il GUIActor
-    */
-  private def setGUIActor(): Unit = this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
-    new GUIActor(
-      this.actorsList.getItems,
-      this.mapOfChats,
-      this.listOfMessages.getItems,
-      this.labelActorInfo, this.user)))
 
   /**
-    * Metodo che setta le choiceBox
+    * Metodo che setta la choiceBox e il relativo Listener.
     */
   private def setChoiceBox(): Unit = {
     this.choiceBox.setPrefWidth(100)
     this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
     this.choiceBox.setItems(FXCollections.observableArrayList[String](
-      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user))
+      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user.getName))
     this.choiceBox.getSelectionModel.selectFirst()
     this.choiceBox.getSelectionModel.selectedIndexProperty.addListener(new ChangeListener[Number]() {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
-        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user)) {
-          actorsList.getItems.stream().filter(c => c.members.contains(user.getId))
+        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user.getName)) {
+          chatList.getItems.stream().filter(c => c.members.contains(user.getId))
         }
       }
     })
@@ -150,7 +153,7 @@ class MainViewController {
     * Metodo che setta la ListView di attori con gli opportuni listeners.
     */
   private def setUpListView(): Unit = {
-    this.actorsList.setCellFactory((_: ListView[ChatWrapper]) => new ListCell[ChatWrapper]() {
+    this.chatList.setCellFactory((_: ListView[ChatWrapper]) => new ListCell[ChatWrapper]() {
       override protected def updateItem(item: ChatWrapper, empty: Boolean): Unit = {
         super.updateItem(item, empty)
         if (empty) setText("")
@@ -162,9 +165,9 @@ class MainViewController {
       }
     })
 
-    this.actorsList.setOnMouseClicked((_: MouseEvent) => {
-        val currentChat = this.actorsList.getSelectionModel.getSelectedItem
-        if (!this.actorsList.getItems.isEmpty && currentChat != null) {
+    this.chatList.setOnMouseClicked((_: MouseEvent) => {
+        val currentChat = this.chatList.getSelectionModel.getSelectedItem
+        if (!this.chatList.getItems.isEmpty && currentChat != null) {
 
           this.invokeGuiActorForSelectedChat(currentChat.actor)
           this.setViewComponents(areDisabled = false, areWeInSend = false)
@@ -190,7 +193,7 @@ class MainViewController {
     * @param chatName il nome della nuova chat.
     */
   private def invokeGuiActorForAddChat(chatName: String): Unit = {
-    guiActor.tell(NewChatButtonMsg(this.actorsList.getItems, chatName), ActorRef.noSender)
+    guiActor.tell(NewChatButtonMsg(this.chatList.getItems, chatName), ActorRef.noSender)
   }
 
   /**

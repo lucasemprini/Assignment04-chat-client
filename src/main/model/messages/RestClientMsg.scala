@@ -6,6 +6,8 @@ final case class UserMsg(id: String)
 
 final case class UserRes(user: User)
 
+final case class ChatRes(chat: Chat)
+
 final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
 final case class GetChatMsg(id: String)
@@ -18,7 +20,7 @@ final case class ChatIdRes(chatId: String)
 
 final case class SetUserMsg(user: User)
 
-final case class OKSetUserMsg()
+final case class OKSetUserMsg(user: User)
 
 final case class ErrorUserReq(detail: String)
 

@@ -5,13 +5,12 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpResponse, _}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
+import io.vertx.core.buffer.Buffer
 import io.vertx.lang.scala.json.{Json, JsonObject}
+import io.vertx.scala.core.Vertx
+import io.vertx.scala.ext.web.client.WebClient
 import model.actors.RestClient._
 import model.messages._
-import com.softwaremill.sttp._
-import io.vertx.core.buffer.Buffer
-import io.vertx.scala.core.{MultiMap, Vertx}
-import io.vertx.scala.ext.web.client.WebClient
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
@@ -30,6 +29,7 @@ object RestClient {
   val MSG: String = "msg"
   val SENDER: String = "sender"
   val ID: String = "id"
+  val TITLE: String = "title"
 }
 
 
@@ -41,27 +41,29 @@ class RestClient extends Actor {
   /**
     * Risponde a:
     *   - UserMsg(id)
-    *       Esegue una GET /user/:id
-    *       POS: Non risponde direttamente ma manda un messaggio a se stesso in ricerca delle chat dell'utente trovato
-    *       NEG: Risponde con un ErrorUserReq(details) fornendo i dettagli che hanno causato l'errore
+    * Esegue una GET /user/:id
+    * POS: Non risponde direttamente ma manda un messaggio a se stesso in ricerca delle chat dell'utente trovato
+    * NEG: Risponde con un ErrorUserReq(details) fornendo i dettagli che hanno causato l'errore
     *
     *   - UserChatsMsg(msgUser, sender)
-    *       Esegue una GET /user/:id/chats
-    *       POS: Risponde con un messaggio UserRes(user) contenente l'utente compilato con i propri dati e le sue chats
-    *       NEG: Risponde con un ErrorUserReq o ErrorChatsReq in base che chi ha chiamato la ricerca cercasse l'utente o la sua lista di chat.
+    * Esegue una GET /user/:id/chats
+    * POS: Risponde con un messaggio UserRes(user) contenente l'utente compilato con i propri dati e le sue chats
+    * NEG: Risponde con un ErrorUserReq o ErrorChatsReq in base che chi ha chiamato la ricerca cercasse l'utente o la sua lista di chat.
     *
     *   - GetChatMsg(chatId)
-    *       Esegue una GET /chats/:id
-    *       POS: Risponde con un messaggio Chat contente l'id della chat e una lista di messaggio
-    *       NEG: Risponde con un messaggio ErrorChatReq(details)
+    * Esegue una GET /chats/:id
+    * POS: Risponde con un messaggio Chat contente l'id della chat e una lista di messaggio
+    * NEG: Risponde con un messaggio ErrorChatReq(details)
     *
     *   - SetUserMsg(user)
-    *       Esegue un POST /user/:id
-    *         POS: Risponde con un messaggio OkSetUserMsg, ciò significa che è andato tutto bene
-    *         NEG: Risponde con un messaggio ErrorSetUser(details)
+    * Esegue un POST /user/:id
+    * POS: Risponde con un messaggio OkSetUserMsg, ciò significa che è andato tutto bene
+    * NEG: Risponde con un messaggio ErrorSetUser(details)
+    *
     * @return
     */
   override def receive: Receive = {
+    //USER
     case UserMsg(id) =>
       val actSender: ActorRef = sender()
       val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/user/" + id))
@@ -112,6 +114,24 @@ class RestClient extends Actor {
         }
       })
 
+    case SetUserMsg(user) =>
+      val actSender: ActorRef = sender()
+      POSTReq("/user/" + user.getId, user.queryParams, resBody => {
+        val body = resBody.bodyAsString().getOrElse("")
+        if (Json.fromObjectString(body).getBoolean(RESULT)) {
+          actSender ! OKSetUserMsg
+        } else {
+          actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+        }
+      }, cause => {
+        cause.printStackTrace()
+        actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+      })
+
+
+
+
+    //CHAT
     case GetChatMsg(chatId) =>
       val actSender: ActorRef = sender()
       val messages: ListBuffer[Message] = ListBuffer()
@@ -121,11 +141,12 @@ class RestClient extends Actor {
         resBody.map(body => {
           val data: JsonObject = Json.fromObjectString(body)
           if (data.getBoolean(RESULT)) {
+            val title = data.getString(TITLE)
             data.getJsonArray(CHAT) forEach (jsonMsg => {
               val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
               messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
             })
-            actSender ! ChatMsgRes(new Chat(chatId, messages))
+            actSender ! ChatRes(new Chat(chatId, title,messages))
           } else {
             actSender ! ErrorChatReq(data.getString(DETAILS))
           }
@@ -137,7 +158,7 @@ class RestClient extends Actor {
 
     case GetNewChatId() =>
       val actSender: ActorRef = sender()
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri= URL_PREFIX + "/chats/new/"))
+      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/chats/new/"))
 
       handleResponse(responseFuture, resBody => {
         resBody.map(body => {
@@ -148,21 +169,23 @@ class RestClient extends Actor {
         actSender ! ErrorNewChatId("Errore nella comunicazione con il server: " + failRes.entity.toString)
       })
 
-    case SetUserMsg(user) =>
+    case SetChatMsg(chat) =>
       val actSender: ActorRef = sender()
-      POSTReq("/user/" + user.getId, user.queryParams,resBody => {
+      POSTReq("/chats/" + chat.getId + "/head", chat.queryParams, resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         if (Json.fromObjectString(body).getBoolean(RESULT)) {
-          println("EHILLAAAAA")
-          actSender ! OKSetUserMsg
+          actSender ! OkSetChatMsg
         } else {
-          println("SAD")
-          actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+          actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
         }
       }, cause => {
         cause.printStackTrace()
-        actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+        actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
       })
+
+
+
+
   }
 
 
@@ -178,12 +201,13 @@ class RestClient extends Actor {
     val client = WebClient.create(Vertx.vertx())
     val complexUri = new StringBuffer(uri)
     var first: Boolean = true
-    params foreach {case (k,v) =>
+    params foreach { case (k, v) =>
       if (first) {
-        complexUri.append("?")
+        complexUri.append("?" + k + "=" + v)
         first = false
+      } else {
+        complexUri.append("&" + k + "=" + v)
       }
-      complexUri.append(k + "=" + v)
     }
     client.post(URL, complexUri.toString).sendFuture().onComplete {
       case Success(result) => onSucces(result)
