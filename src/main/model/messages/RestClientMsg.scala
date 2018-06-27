@@ -14,6 +14,12 @@ final case class GetChatMsg(id: String)
 
 final case class ChatMsgRes(chat: Chat)
 
+final case class GetChat(id: String)
+
+final case class SetChatMsg(chat: Chat)
+
+final case class OkSetChatMsg()
+
 final case class GetNewChatId()
 
 final case class ChatIdRes(chatId: String)
@@ -31,3 +37,5 @@ final case class ErrorChatReq(detail: String)
 final case class ErrorNewChatId(detail:String)
 
 final case class ErrorSetUser(detail:String)
+
+final case class ErrorSetChat(detail: String)

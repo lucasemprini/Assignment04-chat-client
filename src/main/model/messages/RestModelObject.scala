@@ -17,6 +17,7 @@ trait RestObject {
     this.getClass.getMethods
       .filter(m => m.getName.startsWith("get"))
       .filter(m => !m.getName.equals("getClass"))
+      .filter(m => !m.getName.equals("getId"))
       .foreach(m => {
         val key = m.getName.replaceFirst("get", "").toLowerCase
         val value = m.invoke(this)
@@ -52,9 +53,19 @@ class Message(timestamp: Long,
 }
 
 class Chat(id: String,
+           title: String,
            messages: ListBuffer[Message]) extends RestObject {
 
   def getId: String = id
 
+  def getTitle: String = title
+
   def getMessage: ListBuffer[Message] = messages
+
+  override def queryParams: Map[String, String] = {
+    val map: mutable.HashMap[String, String] = mutable.HashMap()
+
+    map.put("title", getTitle)
+    map.toMap
+  }
 }
