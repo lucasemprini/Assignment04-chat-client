@@ -94,12 +94,12 @@ class MainViewController {
     this.choiceBox.setPrefWidth(100)
     this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
     this.choiceBox.setItems(FXCollections.observableArrayList[String](
-      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user))
+      MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user.getName))
     this.choiceBox.getSelectionModel.selectFirst()
     this.choiceBox.getSelectionModel.selectedIndexProperty.addListener(new ChangeListener[Number]() {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
-        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user)) {
+        if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user.getName)) {
           actorsList.getItems.stream().filter(c => c.members.contains(user.getId))
         }
       }
