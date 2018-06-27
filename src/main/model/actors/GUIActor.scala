@@ -22,19 +22,18 @@ class GUIActor(val users: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         //TODO notifica lo User con restClient
       case NewChatButtonMsg(_, chatName) =>
         Platform.runLater(() => {
-            val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
-            //newActor.tell(new StartChatMsg(registry, getSelf), ActorRef.noSender)
-            this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
-
-            this.users.add(new ChatWrapper(chatName, Seq(currentUser.getId), newChat))
+          val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
+          //TODO notifica lo User con RestClient
+          this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
+          this.users.add(new ChatWrapper(chatName, Seq(currentUser.getId), newChat))
         })
       case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
         this.users.remove(removeWho)
         this.currentChat.clear()
         this.mapOfChats -= removeWho.actor
+        //TODO notifica lo User con RestClient
         context.stop(removeWho.actor)
       })
-      //case GUIShowMsg(msg, sender, prefix) => //TODO aggiungere alla view il nuovo messaggio. Come gestirlo?
       case ChatSelectedMSg(selected) =>
         Platform.runLater(() => {
             this.currentChat = mapOfChats(selected)
