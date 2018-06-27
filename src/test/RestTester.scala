@@ -13,7 +13,7 @@ class RestTester() extends TestKit(ActorSystem("MySystem")) with ImplicitSender
     TestKit.shutdownActorSystem(system)
   }
 
-  val user = new User("jacopo47", "jacopo")
+  val user = new User("jacopo47", "jacopin")
   user.queryParams
   var client: ActorRef = system.actorOf(RestClient.props())
 
@@ -26,10 +26,10 @@ class RestTester() extends TestKit(ActorSystem("MySystem")) with ImplicitSender
 
   /*client tell (GetChatMsg("1"), probe.ref)
 
-  val chat: Chat = probe.expectMsgType[Chat](50000 millis)*/
+  val chat: Chat = probe.expectMsgType[ChatMsgRes](50000 millis).chat*/
 
 
-  client tell (SetUserMsg, probe.ref)
+  client tell (GetNewChatId("helloooo"), probe.ref)
 
-  val chat: Chat = probe.expectMsgType[Chat](50000 millis)
+  probe.expectMsgType[NewChatIdRes](50000 millis)
 }
