@@ -135,7 +135,7 @@ class PreGUIActor extends Actor {
     try {
       val loader = initGui(mainStage, user.getId)
       val lc = loader.getController[MainViewController]
-      lc.setUser(user)
+      lc.setUser(user, restClient)
     } catch {
       case e@(_: IOException | _: InterruptedException) => e.printStackTrace()
     })

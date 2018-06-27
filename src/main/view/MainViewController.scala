@@ -51,6 +51,7 @@ class MainViewController {
   private var guiActor: ActorRef = _
   //TODO cambiare TIPO dello user ??
   private var user: User = _
+  private var restClient: ActorRef = _
   private var addCounter = 0
 
   /**
@@ -62,8 +63,9 @@ class MainViewController {
     * Metodo che setta lo username ricevuto dalla finestra iniziale e setta tutte le componenti che ne dipendono.
     * @param user lo user preso dal DB specificato dall'utente
     */
-  def setUser(user: User): Unit = {
+  def setUser(user: User, restClient: ActorRef): Unit = {
     this.user = user
+    this.restClient = restClient
     //this.chatList.setItems()
     this.setGUIActor()
     this.setChoiceBox()
@@ -80,7 +82,9 @@ class MainViewController {
       this.chatList.getItems,
       this.mapOfChats,
       this.listOfMessages.getItems,
-      this.labelActorInfo, this.user)))
+      this.labelActorInfo,
+      this.user,
+      this.restClient)))
 
   /**
     * Metodo che setta la choiceBox e il relativo Listener.
