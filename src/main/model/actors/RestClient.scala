@@ -9,6 +9,7 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.lang.scala.json.{Json, JsonObject}
 import io.vertx.scala.core.Vertx
 import io.vertx.scala.ext.web.client.WebClient
+import model.ChatWrapper
 import model.actors.RestClient._
 import model.messages._
 
@@ -146,7 +147,7 @@ class RestClient extends Actor {
               val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
               messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
             })
-            actSender ! ChatRes(new Chat(chatId, title,messages))
+            actSender ! ChatRes(new ChatWrapper(new Chat(chatId, title, messages), Seq[User]()))
           } else {
             actSender ! ErrorChatReq(data.getString(DETAILS))
           }
@@ -156,13 +157,13 @@ class RestClient extends Actor {
         actSender ! ErrorChatReq("Errore nella comunicazione con il server: " + failRes.entity.toString)
       })
 
-    case GetNewChatId() =>
+    case GetNewChatId(chatName) =>
       val actSender: ActorRef = sender()
       val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/chats/new/"))
 
       handleResponse(responseFuture, resBody => {
         resBody.map(body => {
-          actSender ! ChatIdRes(Json.fromObjectString(body).getString(ID))
+          actSender ! NewChatIdRes(Json.fromObjectString(body).getString(ID), chatName)
         })
       }, failRes => {
         println("fail, status code: " + failRes.status)
@@ -182,8 +183,6 @@ class RestClient extends Actor {
         cause.printStackTrace()
         actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
       })
-
-
 
 
   }

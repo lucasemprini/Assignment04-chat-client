@@ -9,6 +9,7 @@ import model.{ChatWrapper, Utility}
 import model.messages._
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ActorRef, ObservableList[String]],
                var currentChat: ObservableList[String], val actorLabel: Label, var currentUser: User,
@@ -34,13 +35,16 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.mapOfChats(sender).add(currentUser.getName + ": " + message)
       })
       //TODO this.restClient.nonLoSO -> Inviare un messaggio??
-    case NewChatButtonMsg(_, chatName) =>
+    case NewChatIdRes(chatId, chatName) =>
       Platform.runLater(() => {
         val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
         //TODO notifica lo User con RestClient -> Creazione di una nuova Chat??
         this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
-        this.chats.add(new ChatWrapper(chatName, Seq(currentUser.getId), newChat))
+        this.chats.add(new ChatWrapper(chatName, new Chat(chatId.getId, ListBuffer.empty), Seq(currentUser), newChat))
       })
+    case NewChatButtonMsg(_, chatName) =>
+      restClient.tell(GetNewChatId(chatName), self)
+
     case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
       this.chats.remove(removeWho)
       this.currentChat.clear()
