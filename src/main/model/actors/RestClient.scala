@@ -14,7 +14,7 @@ import model.actors.RestClient._
 import model.messages._
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 
@@ -35,9 +35,9 @@ object RestClient {
 
 
 class RestClient extends Actor {
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
-  implicit val execeutionContext = system.dispatcher
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit val execeutionContext: ExecutionContextExecutor = system.dispatcher
 
   /**
     * Risponde a:
@@ -163,7 +163,9 @@ class RestClient extends Actor {
 
       handleResponse(responseFuture, resBody => {
         resBody.map(body => {
-          actSender ! NewChatIdRes(Json.fromObjectString(body).getString(ID), chatName)
+          val id: String = Json.fromObjectString(body).getString(ID)
+          self ! SetChatMsg(new Chat(id, chatName, ListBuffer.empty))
+          actSender ! NewChatIdRes(id, chatName)
         })
       }, failRes => {
         println("fail, status code: " + failRes.status)
@@ -175,6 +177,7 @@ class RestClient extends Actor {
       POSTReq("/chats/" + chat.getId + "/head", chat.queryParams, resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         if (Json.fromObjectString(body).getBoolean(RESULT)) {
+          println("heilaiodio")
           actSender ! OkSetChatMsg
         } else {
           actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
@@ -196,7 +199,7 @@ class RestClient extends Actor {
   }
 
 
-  private def POSTReq(uri: String, params: Map[String, String], onSucces: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
+  private def POSTReq(uri: String, params: Map[String, String], onSuccess: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
     val client = WebClient.create(Vertx.vertx())
     val complexUri = new StringBuffer(uri)
     var first: Boolean = true
@@ -209,13 +212,12 @@ class RestClient extends Actor {
       }
     }
     client.post(URL, complexUri.toString).sendFuture().onComplete {
-      case Success(result) => onSucces(result)
+      case Success(result) => onSuccess(result)
       case Failure(cause) => onFail(cause)
     }
   }
 
-  private def GETReq(uri: String, onSucces: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
+  private def GETReq(uri: String, onSuccess: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
 
   }
-
 }
