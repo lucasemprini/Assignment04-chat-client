@@ -10,7 +10,11 @@ final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
 final case class GetChatMsg(id: String)
 
+final case class ChatMsgRes(chat: Chat)
+
 final case class GetNewChatId()
+
+final case class ChatIdRes(chatId: String)
 
 final case class SetUserMsg(user: User)
 

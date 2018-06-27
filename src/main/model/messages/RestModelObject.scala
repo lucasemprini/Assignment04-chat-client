@@ -58,7 +58,3 @@ class Chat(id: String,
 
   def getMessage: ListBuffer[Message] = messages
 }
-
-class NewChatId(id: Int) {
-  def getId: String = id.toString
-}

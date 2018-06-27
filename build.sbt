@@ -13,6 +13,7 @@ resourceDirectory in Compile := baseDirectory.value / "res"
 
 
 libraryDependencies += "com.github.etaty" %% "rediscala" % "1.8.0"
+libraryDependencies += "com.softwaremill.sttp" %% "core" % "1.2.1"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.13"
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.5.13"
 libraryDependencies += "com.typesafe.akka" %% "akka-http"   % "10.1.3"
@@ -21,3 +22,4 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.4" % Test
 libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.3"
 libraryDependencies += "io.vertx" %% "vertx-lang-scala" % "3.5.2"
+libraryDependencies += "io.vertx" %% "vertx-web-client-scala" % "3.5.2"

@@ -8,15 +8,21 @@ import akka.stream.ActorMaterializer
 import io.vertx.lang.scala.json.{Json, JsonObject}
 import model.actors.RestClient._
 import model.messages._
+import com.softwaremill.sttp._
+import io.vertx.core.buffer.Buffer
+import io.vertx.scala.core.{MultiMap, Vertx}
+import io.vertx.scala.ext.web.client.WebClient
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 
 object RestClient {
   def props(): Props = Props(new RestClient)
 
   val URL_PREFIX = "https://assignment04-chat-server.herokuapp.com"
+  val URL = "assignment04-chat-server.herokuapp.com"
   val RESULT = "result"
   val DETAILS = "details"
   val CHAT: String = "chat"
@@ -119,7 +125,7 @@ class RestClient extends Actor {
               val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
               messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
             })
-            actSender ! new Chat(chatId, messages)
+            actSender ! ChatMsgRes(new Chat(chatId, messages))
           } else {
             actSender ! ErrorChatReq(data.getString(DETAILS))
           }
@@ -135,7 +141,7 @@ class RestClient extends Actor {
 
       handleResponse(responseFuture, resBody => {
         resBody.map(body => {
-          actSender ! new NewChatId(Json.fromObjectString(body).getInteger(ID))
+          actSender ! ChatIdRes(Json.fromObjectString(body).getString(ID))
         })
       }, failRes => {
         println("fail, status code: " + failRes.status)
@@ -144,34 +150,49 @@ class RestClient extends Actor {
 
     case SetUserMsg(user) =>
       val actSender: ActorRef = sender()
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(
-                                                                  HttpRequest(method = HttpMethods.POST,
-                                                                    uri = Uri(URL_PREFIX + "/user/" + user.getId),
-                                                                    entity = FormData(user.queryParams).toEntity(HttpCharsets.`UTF-8`)))
-
-      handleResponse(responseFuture, resBody => {
-        resBody.map(body => {
-          if (Json.fromObjectString(body).getBoolean(RESULT)) {
-            println("EHILLAAAAA")
-            actSender ! OKSetUserMsg
-          } else {
-            println("SAD")
-            actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
-          }
-        })
-      }, failRes => {
-        println("fail, status code: " + failRes.status)
+      POSTReq("/user/" + user.getId, user.queryParams,resBody => {
+        val body = resBody.bodyAsString().getOrElse("")
+        if (Json.fromObjectString(body).getBoolean(RESULT)) {
+          println("EHILLAAAAA")
+          actSender ! OKSetUserMsg
+        } else {
+          println("SAD")
+          actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
+        }
+      }, cause => {
+        cause.printStackTrace()
         actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
       })
-
   }
 
 
   private def handleResponse(future: Future[HttpResponse], onSuccess: Future[String] => Unit, onFail: HttpResponse => Unit) = {
     future.map {
-      case response@HttpResponse(StatusCodes.OK, _, _, _) => onSuccess(Unmarshal(response.entity).to[String])
+      case response@HttpResponse(akka.http.scaladsl.model.StatusCodes.OK, _, _, _) => onSuccess(Unmarshal(response.entity).to[String])
       case failRes@_ => onFail(failRes)
     }
+  }
+
+
+  private def POSTReq(uri: String, params: Map[String, String], onSucces: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
+    val client = WebClient.create(Vertx.vertx())
+    val complexUri = new StringBuffer(uri)
+    var first: Boolean = true
+    params foreach {case (k,v) =>
+      if (first) {
+        complexUri.append("?")
+        first = false
+      }
+      complexUri.append(k + "=" + v)
+    }
+    client.post(URL, complexUri.toString).sendFuture().onComplete {
+      case Success(result) => onSucces(result)
+      case Failure(cause) => onFail(cause)
+    }
+  }
+
+  private def GETReq(uri: String, onSucces: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
+
   }
 
 }
