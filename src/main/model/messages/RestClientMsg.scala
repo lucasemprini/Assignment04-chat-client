@@ -14,7 +14,7 @@ final case class GetNewChatId()
 
 final case class SetUserMsg(user: User)
 
-final case class OKSetUserMsg()
+final case class OKSetUserMsg(user: User)
 
 final case class ErrorUserReq(detail: String)
 

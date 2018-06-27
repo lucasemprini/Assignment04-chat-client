@@ -2,7 +2,7 @@ package model.actors
 
 import java.io.IOException
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props}
 import javafx.application.Platform
 import javafx.fxml.FXMLLoader
 import javafx.geometry.Insets
@@ -27,25 +27,18 @@ class PreGUIActor extends Actor {
   override def receive: Receive = {
     case UserSelected(userId, primaryStage) =>
       this.mainStage = primaryStage
+      this.userIdChosen = userId
       this.restClient.tell(UserMsg(userId), self)
 
-    case UserRes (user) =>
-      Platform.runLater(()=>
-        try {
-          val loader = initGui(mainStage, user.getId)
-          val lc = loader.getController[MainViewController]
-          this.userIdChosen = user.getId
-          lc.setUser(user)
-        } catch {
-          case e@(_: IOException | _: InterruptedException) => e.printStackTrace()
-        })
+    case UserRes (user) => loadGUI(user)
+
     case ErrorUserReq(_) => Platform.runLater(() => {
-      val yesToNewAccount = this.createAlertUserNotExistant()
+      val yesToNewAccount = this.createAlertUserNotExistent()
       if(yesToNewAccount) {
         this.createAlertNewAccount()
       }
     })
-    case OKSetUserMsg() => ???
+    case OKSetUserMsg(user) => loadGUI(user)
     case ErrorChatsReq(detail) => Platform.runLater(() =>createErrorAlertDialog("Chats", detail))
     case ErrorSetUser(detail) => Platform.runLater(() =>createErrorAlertDialog("User", detail))
   }
@@ -57,7 +50,7 @@ class PreGUIActor extends Actor {
     alert.setContentText(detail)
     alert.showAndWait()
   }
-  private def createAlertUserNotExistant(): Boolean = {
+  private def createAlertUserNotExistent(): Boolean = {
     val alert = new Alert(AlertType.WARNING)
     alert.setTitle("The Username does not exists!")
     alert.setHeaderText("The Username you provided does not exist on this Server!")
@@ -69,6 +62,10 @@ class PreGUIActor extends Actor {
     alert.getButtonTypes.setAll(buttonTypeYes, buttonTypeCancel)
     alert.showAndWait.get eq buttonTypeYes
   }
+
+  /**
+    * Genera Alert per la creazione di un nuovo account.
+    */
   private def createAlertNewAccount(): Unit = {
 
     val dialog = new Dialog
@@ -130,4 +127,16 @@ class PreGUIActor extends Actor {
 
     loader
   }
+
+  /**
+    * Carica la GUI principale con i giusti parametri.
+    */
+  private def loadGUI(user: User): Unit = Platform.runLater(()=>
+    try {
+      val loader = initGui(mainStage, user.getId)
+      val lc = loader.getController[MainViewController]
+      lc.setUser(user)
+    } catch {
+      case e@(_: IOException | _: InterruptedException) => e.printStackTrace()
+    })
 }

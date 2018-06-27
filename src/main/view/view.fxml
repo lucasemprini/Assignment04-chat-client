@@ -49,7 +49,7 @@
       <AnchorPane id="center_pane">
          <BorderPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <center>
-               <ListView fx:id="actorsList" BorderPane.alignment="CENTER" />
+               <ListView fx:id="chatList" BorderPane.alignment="CENTER" />
             </center>
             <bottom>
                <BorderPane BorderPane.alignment="CENTER">

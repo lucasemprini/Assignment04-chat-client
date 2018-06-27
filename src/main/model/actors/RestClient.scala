@@ -153,7 +153,7 @@ class RestClient extends Actor {
         resBody.map(body => {
           if (Json.fromObjectString(body).getBoolean(RESULT)) {
             println("EHILLAAAAA")
-            actSender ! OKSetUserMsg
+            actSender ! OKSetUserMsg(user)
           } else {
             println("SAD")
             actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)

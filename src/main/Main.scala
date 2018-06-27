@@ -1,4 +1,3 @@
-import java.io.IOException
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.application.Application
@@ -12,15 +11,13 @@ import view.InitialWindowController
 class Main extends Application {
 
   val DEBUG = true
-  val LAYOUT_PATH = "/view/view.fxml"
-  val WINDOW_TITLE = "BETTER ACTORS CHAT"
   private val preActor = ActorSystem.create("MySystem").actorOf(Props(new PreGUIActor()))
 
   override def start(primaryStage: Stage) {
 
     val initialWindow = new InitialWindowController
     val scene = initialWindow.selectDimensionScene
-    primaryStage.setTitle(WINDOW_TITLE)
+    primaryStage.setTitle("WELCOME TO BETTER ACTORS CHAT")
     primaryStage.setScene(scene)
     this.addListenerToOkButton(initialWindow.setUpOkButton(), initialWindow, primaryStage)
     scene.getWindow.centerOnScreen()
