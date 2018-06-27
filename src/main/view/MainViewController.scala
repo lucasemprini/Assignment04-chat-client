@@ -194,8 +194,7 @@ class MainViewController {
     * @param chatName il nome della nuova chat.
     */
   private def invokeGuiActorForAddChat(chatName: String): Unit = {
-    //TODO getNewChatID????
-    guiActor.tell(NewChatButtonMsg(this.chatList.getItems, chatName, new Chat(chatName, ListBuffer.empty)), ActorRef.noSender)
+    guiActor.tell(NewChatButtonMsg(this.chatList.getItems, chatName), ActorRef.noSender)
   }
 
   /**

@@ -130,13 +130,13 @@ class RestClient extends Actor {
         actSender ! ErrorChatReq("Errore nella comunicazione con il server: " + failRes.entity.toString)
       })
 
-    case GetNewChatId() =>
+    case GetNewChatId(chatName) =>
       val actSender: ActorRef = sender()
       val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri= URL_PREFIX + "/chats/new/"))
 
       handleResponse(responseFuture, resBody => {
         resBody.map(body => {
-          actSender ! new NewChatId(Json.fromObjectString(body).getInteger(ID))
+          actSender ! new NewChatIdRes(new NewChatId(Json.fromObjectString(body).getInteger(ID)), chatName)
         })
       }, failRes => {
         println("fail, status code: " + failRes.status)

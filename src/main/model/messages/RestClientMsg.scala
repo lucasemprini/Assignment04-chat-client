@@ -9,11 +9,13 @@ final case class UserRes(user: User)
 
 final case class ChatRes(chat: ChatWrapper)
 
+final case class NewChatIdRes(chatId: NewChatId, chatName: String)
+
 final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
 final case class GetChatMsg(id: String)
 
-final case class GetNewChatId()
+final case class GetNewChatId(chatName: String)
 
 final case class SetUserMsg(user: User)
 
