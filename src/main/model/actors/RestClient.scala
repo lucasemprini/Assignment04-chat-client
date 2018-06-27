@@ -13,6 +13,7 @@ import model.ChatWrapper
 import model.actors.RestClient._
 import model.messages._
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
@@ -129,8 +130,37 @@ class RestClient extends Actor {
         actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
       })
 
+    case AddChatToUserMsg(userId, chatId) =>
+      val actSender: ActorRef = sender()
+      val params = new mutable.HashMap[String, String]()
+      params.put("chat", chatId)
+      POSTReq("/user/" + userId + "/chats", params.toMap, resBody => {
+        val body = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
 
+        if (body.getBoolean(RESULT)) {
+          actSender ! OkAddChatToUserMsg()
+        } else {
+          actSender ! ErrorAddChatToUser(body.getString(DETAILS))
+        }
+      }, _ => {
+        actSender ! ErrorAddChatToUser("Impossibile ciao associare la chat: " + chatId + " all'utente: " + userId)
+      })
 
+    case RemoveChatToUserMsg(userId, chatId) =>
+      val actSender: ActorRef = sender()
+      val params = new mutable.HashMap[String, String]()
+      params.put("chat", chatId)
+      POSTReq("/user/" + userId + "/removeChats", params.toMap, resBody => {
+        val body = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
+
+        if (body.getBoolean(RESULT)) {
+          actSender ! OkRemoveChatToUserMsg()
+        } else {
+          actSender ! ErrorRemoveChatToUser(body.getString(DETAILS))
+        }
+      }, _ => {
+        actSender ! ErrorRemoveChatToUser("Impossibile ciao associare la chat: " + chatId + " all'utente: " + userId)
+      })
 
     //CHAT
     case GetChatMsg(chatId) =>
@@ -177,13 +207,11 @@ class RestClient extends Actor {
       POSTReq("/chats/" + chat.getId + "/head", chat.queryParams, resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         if (Json.fromObjectString(body).getBoolean(RESULT)) {
-          println("heilaiodio")
           actSender ! OkSetChatMsg
         } else {
           actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
         }
-      }, cause => {
-        cause.printStackTrace()
+      }, _ => {
         actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
       })
 
@@ -213,11 +241,27 @@ class RestClient extends Actor {
     }
     client.post(URL, complexUri.toString).sendFuture().onComplete {
       case Success(result) => onSuccess(result)
-      case Failure(cause) => onFail(cause)
+      case Failure(cause) => cause.printStackTrace(); onFail(cause)
     }
   }
 
-  private def GETReq(uri: String, onSuccess: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
-
+  private def GETReq(uri: String, onSuccess: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit, params: Map[String, String] = null): Unit = {
+    val client = WebClient.create(Vertx.vertx())
+    val complexUri = new StringBuffer(uri)
+    var first: Boolean = true
+    if (params != null) {
+      params foreach { case (k, v) =>
+        if (first) {
+          complexUri.append("?" + k + "=" + v)
+          first = false
+        } else {
+          complexUri.append("&" + k + "=" + v)
+        }
+      }
+    }
+    client.get(URL, complexUri.toString).sendFuture().onComplete {
+      case Success(result) => onSuccess(result)
+      case Failure(cause) => cause.printStackTrace(); onFail(cause)
+    }
   }
 }
