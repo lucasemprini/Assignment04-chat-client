@@ -35,6 +35,9 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.mapOfChats(sender).add(currentUser.getName + ": " + message)
       })
       //TODO this.restClient.nonLoSO -> Inviare un messaggio??
+    case NewChatButtonMsg(_, chatName) =>
+      restClient.tell(GetNewChatId(chatName), self)
+    case ErrorNewChatId(detail) => Utility.createErrorAlertDialog("Chat", detail)
     case NewChatIdRes(chatId, chatName) =>
       Platform.runLater(() => {
         val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
@@ -42,8 +45,6 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
         this.chats.add(new ChatWrapper(chatName, new Chat(chatId.getId, ListBuffer.empty), Seq(currentUser), newChat))
       })
-    case NewChatButtonMsg(_, chatName) =>
-      restClient.tell(GetNewChatId(chatName), self)
 
     case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {
       this.chats.remove(removeWho)
