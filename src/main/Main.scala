@@ -2,7 +2,8 @@
 import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.application.Application
 import javafx.event.ActionEvent
-import javafx.scene.control.Button
+import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.{Alert, Button}
 import javafx.stage.Stage
 import model.actors.PreGUIActor
 import model.messages.UserSelected
@@ -38,7 +39,6 @@ class Main extends Application {
       }
     })
   }
-
 
 }
 

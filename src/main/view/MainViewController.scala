@@ -77,14 +77,18 @@ class MainViewController {
   /**
     * Metodo che crea il GUIActor.
     */
-  private def setGUIActor(): Unit = this.guiActor = ActorSystem.create("MySystem").actorOf(Props(
-    new GUIActor(
-      this.chatList.getItems,
-      this.mapOfChats,
-      this.listOfMessages.getItems,
-      this.labelActorInfo,
-      this.user,
-      this.restClient)))
+  private def setGUIActor(): Unit = {
+    this.guiActor =
+    ActorSystem.create("MySystem").actorOf(Props(new GUIActor(
+        this.chatList.getItems,
+        this.mapOfChats,
+        this.listOfMessages.getItems,
+        this.labelActorInfo,
+        this.user,
+        this.restClient)))
+    this.guiActor.tell(SetupViewMsg(), ActorRef.noSender)
+  }
+
 
   /**
     * Metodo che setta la choiceBox e il relativo Listener.

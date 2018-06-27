@@ -12,6 +12,7 @@ import javafx.scene.control.ButtonBar.ButtonData
 import javafx.scene.control._
 import javafx.scene.layout.{AnchorPane, GridPane}
 import javafx.stage.Stage
+import model.Utility
 import model.messages._
 import view.MainViewController
 
@@ -39,17 +40,11 @@ class PreGUIActor extends Actor {
       }
     })
     case OKSetUserMsg(user) => loadGUI(user)
-    case ErrorChatsReq(detail) => Platform.runLater(() =>createErrorAlertDialog("Chats", detail))
-    case ErrorSetUser(detail) => Platform.runLater(() =>createErrorAlertDialog("User", detail))
+    case ErrorChatsReq(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chats", detail))
+    case ErrorSetUser(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("User", detail))
   }
 
-  private def createErrorAlertDialog(what: String, detail: String): Unit = {
-    val alert = new Alert(AlertType.ERROR)
-    alert.setTitle("ERROR")
-    alert.setHeaderText("Error getting the " + what + "!")
-    alert.setContentText(detail)
-    alert.showAndWait()
-  }
+
   private def createAlertUserNotExistent(): Boolean = {
     val alert = new Alert(AlertType.WARNING)
     alert.setTitle("The Username does not exists!")
