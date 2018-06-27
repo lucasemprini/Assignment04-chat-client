@@ -1,5 +1,8 @@
 package model.messages
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import io.vertx.core.json.Json
 
 import scala.collection.mutable
@@ -52,6 +55,8 @@ class Message(timestamp: Long,
   def getMsg: String = msg
 
   def getSender: String = sender
+
+  override def toString: String = "[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(timestamp) + "] " + sender + ": " + msg
 }
 
 class Chat(id: String,

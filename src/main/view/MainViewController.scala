@@ -31,9 +31,9 @@ object MainViewController {
 }
 
 class MainViewController {
-  private val mapOfChats = new mutable.HashMap[ActorRef, ObservableList[String]]
+  private val mapOfChats = new mutable.HashMap[ActorRef, ObservableList[Message]]
   @FXML
-  var listOfMessages: ListView[String] = _
+  var listOfMessages: ListView[Message] = _
   @FXML
   var chatList: ListView[ChatWrapper] = _
   @FXML
@@ -159,7 +159,7 @@ class MainViewController {
         super.updateItem(item, empty)
         if (empty) setText("")
         else {
-          setText(item.chatName + "\n"
+          setText(item.chatModel.getTitle + "\n"
             + " - Members: " + item.members.mkString(", "))
           setStyle("-fx-font: 16px \"Default\";")
         }
