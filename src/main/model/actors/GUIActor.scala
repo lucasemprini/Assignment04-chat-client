@@ -11,38 +11,41 @@ import model.messages._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ActorRef, ObservableList[String]],
-               var currentChat: ObservableList[String], val actorLabel: Label, var currentUser: User,
+class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ActorRef, ObservableList[Message]],
+               var currentChat: ObservableList[Message], val actorLabel: Label, var currentUser: User,
                val restClient: ActorRef) extends Actor {
 
   override def receive(): Receive = {
     case SetupViewMsg() => restClient.tell(UserChatsMsg(currentUser, self), self)
     case UserRes(user) => {
       currentUser = user
-      //TODO this.chats.addAll(user.chats)
+      //this.currentUser.chats.foreach(c => this.chats.add(new ChatWrapper()))
       this.chats.forEach(c => {
-        this.restClient.tell(GetChatMsg(c.chatName), self)
+        this.restClient.tell(GetChatMsg(c.chatModel.getId), self)
       })
     }
     case ChatRes(chatModelObject) =>
-      /* TODO
-      * this.chats.add(chatModelObject)
-      * this.mapOfChats += (chatModelObject -> FXCollections.checkedObservableList(chatModelObject.getMessage))
-      */
+      this.chats.add(chatModelObject)
+      this.mapOfChats += (chatModelObject.actor -> FXCollections.observableArrayList[Message]())
+      chatModelObject.chatModel.getMessage.foreach(m => this.mapOfChats(chatModelObject.actor).add(m))
+
     case ErrorChatReq(detail) => Utility.createErrorAlertDialog("Chat", detail)
+
     case SendButtonMsg(message, listOfMessages, sender) =>
       Platform.runLater(() => {
-        this.mapOfChats(sender).add(currentUser.getName + ": " + message)
+        this.mapOfChats(sender).add(new Message(System.currentTimeMillis(), message, currentUser.getName))
       })
       //TODO this.restClient.nonLoSO -> Inviare un messaggio??
     case NewChatButtonMsg(_, chatName) =>
       restClient.tell(GetNewChatId(chatName), self)
+
     case ErrorNewChatId(detail) => Utility.createErrorAlertDialog("Chat", detail)
+
     case NewChatIdRes(chatId, chatName) =>
       Platform.runLater(() => {
         val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
         //TODO notifica lo User con RestClient -> Creazione di una nuova Chat??
-        this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
+        this.mapOfChats += (newChat -> FXCollections.observableArrayList[Message])
         this.chats.add(new ChatWrapper(new Chat(chatId, chatName,ListBuffer.empty), Seq(currentUser), newChat))
       })
 

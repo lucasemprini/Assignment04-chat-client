@@ -31,9 +31,9 @@ object MainViewController {
 }
 
 class MainViewController {
-  private val mapOfChats = new mutable.HashMap[ActorRef, ObservableList[String]]
+  private val mapOfChats = new mutable.HashMap[ActorRef, ObservableList[Message]]
   @FXML
-  var listOfMessages: ListView[String] = _
+  var listOfMessages: ListView[Message] = _
   @FXML
   var chatList: ListView[ChatWrapper] = _
   @FXML
