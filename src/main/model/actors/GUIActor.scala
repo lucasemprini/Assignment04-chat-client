@@ -40,7 +40,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
         //TODO notifica lo User con RestClient -> Creazione di una nuova Chat??
         this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
-        this.chats.add(new ChatWrapper(chatName, new Chat(chatId.getId, ListBuffer.empty), Seq(currentUser), newChat))
+        this.chats.add(new ChatWrapper(chatName, new Chat(chatId, "TODO",ListBuffer.empty), Seq(currentUser), newChat))
       })
     case NewChatButtonMsg(_, chatName) =>
       restClient.tell(GetNewChatId(chatName), self)
