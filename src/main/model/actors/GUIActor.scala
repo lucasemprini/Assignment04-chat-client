@@ -33,11 +33,11 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       Platform.runLater(() => {
         this.mapOfChats(sender).add(currentUser.getName + ": " + message)
       })
-      this.restClient
+      //TODO this.restClient.nonLoSO -> Inviare un messaggio??
     case NewChatButtonMsg(_, chatName) =>
       Platform.runLater(() => {
         val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
-        //TODO notifica lo User con RestClient
+        //TODO notifica lo User con RestClient -> Creazione di una nuova Chat??
         this.mapOfChats += (newChat -> FXCollections.observableArrayList[String])
         this.chats.add(new ChatWrapper(chatName, Seq(currentUser.getId), newChat))
       })
@@ -45,7 +45,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       this.chats.remove(removeWho)
       this.currentChat.clear()
       this.mapOfChats -= removeWho.actor
-      //TODO notifica lo User con RestClient
+      //TODO notifica lo User con RestClient -> Rimuovere una Chat??
       context.stop(removeWho.actor)
     })
     case ChatSelectedMSg(selected) =>
