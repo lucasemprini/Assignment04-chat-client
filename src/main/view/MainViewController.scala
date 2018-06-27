@@ -159,7 +159,7 @@ class MainViewController {
         super.updateItem(item, empty)
         if (empty) setText("")
         else {
-          setText(item.chatName + "\n"
+          setText(item.chatModel.getTitle + "\n"
             + " - Members: " + item.members.mkString(", "))
           setStyle("-fx-font: 16px \"Default\";")
         }
