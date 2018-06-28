@@ -17,9 +17,9 @@ final case class AddChatToUserMsg(userId: String, chatId: String)
 
 final case class OkAddChatToUserMsg()
 
-final case class RemoveChatToUserMsg(userId: String, chatId: String)
+final case class RemoveChatToUserMsg(userId: String, chat: ChatWrapper)
 
-final case class OkRemoveChatToUserMsg()
+final case class OkRemoveChatToUserMsg(chat: ChatWrapper)
 
 final case class GetChatMsg(id: String)
 

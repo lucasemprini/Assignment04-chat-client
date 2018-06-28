@@ -32,7 +32,7 @@ object MainViewController {
 }
 
 class MainViewController {
-  private val mapOfChats = new mutable.HashMap[ActorRef, ObservableList[Message]]
+  private val mapOfChats = new mutable.HashMap[ChatWrapper, ObservableList[Message]]
   @FXML
   var listOfMessages: ListView[Message] = _
   @FXML
@@ -170,12 +170,12 @@ class MainViewController {
         val currentChat = this.chatList.getSelectionModel.getSelectedItem
         if (!this.chatList.getItems.isEmpty && currentChat != null) {
 
-          this.invokeGuiActorForSelectedChat(currentChat.actor)
+          this.invokeGuiActorForSelectedChat(currentChat)
           this.setViewComponents(areDisabled = false, areWeInSend = false)
-          this.listOfMessages.setItems(this.mapOfChats(currentChat.actor))
+          this.listOfMessages.setItems(this.mapOfChats(currentChat))
 
           this.sendButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForSendMsg(currentChat.actor, this.getTextFromArea)
+            this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
             this.setViewComponents(areDisabled = true, areWeInSend = true)
           })
 
@@ -212,7 +212,7 @@ class MainViewController {
     * @param currentChat la chat su cui inviare il messaggio.
     * @param msg  il messaggio da inviare.
     */
-  private def invokeGuiActorForSendMsg(currentChat: ActorRef, msg: String): Unit = {
+  private def invokeGuiActorForSendMsg(currentChat: ChatWrapper, msg: String): Unit = {
     guiActor.tell(SendButtonMsg(msg, this.mapOfChats(currentChat), currentChat), ActorRef.noSender)
   }
 
@@ -221,7 +221,7 @@ class MainViewController {
     *
     * @param currentChat la chat selezionata.
     */
-  private def invokeGuiActorForSelectedChat(currentChat: ActorRef): Unit = {
+  private def invokeGuiActorForSelectedChat(currentChat: ChatWrapper): Unit = {
     guiActor.tell(ChatSelectedMSg(currentChat), ActorRef.noSender)
   }
 }

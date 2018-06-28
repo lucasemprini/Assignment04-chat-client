@@ -146,20 +146,20 @@ class RestClient extends Actor {
         actSender ! ErrorAddChatToUser("Impossibile ciao associare la chat: " + chatId + " all'utente: " + userId)
       })
 
-    case RemoveChatToUserMsg(userId, chatId) =>
+    case RemoveChatToUserMsg(userId, chat) =>
       val actSender: ActorRef = sender()
       val params = new mutable.HashMap[String, String]()
-      params.put("chat", chatId)
+      params.put("chat", chat.chatModel.getId)
       POSTReq("/user/" + userId + "/removeChats", params.toMap, resBody => {
         val body = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
 
         if (body.getBoolean(RESULT)) {
-          actSender ! OkRemoveChatToUserMsg()
+          actSender ! OkRemoveChatToUserMsg(chat)
         } else {
           actSender ! ErrorRemoveChatToUser(body.getString(DETAILS))
         }
       }, _ => {
-        actSender ! ErrorRemoveChatToUser("Impossibile ciao associare la chat: " + chatId + " all'utente: " + userId)
+        actSender ! ErrorRemoveChatToUser("Impossibile ciao associare la chat: " + chat.chatModel.getId + " all'utente: " + userId)
       })
 
     //CHAT

@@ -7,13 +7,13 @@ import model.ChatWrapper
 
 trait ButtonMsg{}
 
-final case class SendButtonMsg(message: String, listOfMessages: ObservableList[Message], sender: ActorRef )
+final case class SendButtonMsg(message: String, listOfMessages: ObservableList[Message], sender: ChatWrapper )
 
 final case class NewChatButtonMsg(listOfChats: ObservableList[ChatWrapper], chatName: String)
 
 final case class RemoveChatButtonMsg(removeWho: ChatWrapper)
 
-final case class ChatSelectedMSg(selected: ActorRef)
+final case class ChatSelectedMSg(selected: ChatWrapper)
 
 final case class SetupViewMsg()
 
