@@ -17,13 +17,11 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
 
   override def receive(): Receive = {
     case SetupViewMsg() => restClient.tell(UserChatsMsg(currentUser, self), self)
-    case UserRes(user) => {
+    case UserRes(user) =>
       currentUser = user
-      //this.currentUser.chats.foreach(c => this.chats.add(new ChatWrapper()))
-      this.chats.forEach(c => {
-        this.restClient.tell(GetChatMsg(c.chatModel.getId), self)
+      this.currentUser.chats.foreach(c => {
+        this.restClient.tell(GetChatMsg(c), self)
       })
-    }
     case ChatRes(chatModelObject) =>
       this.chats.add(chatModelObject)
       this.mapOfChats += (chatModelObject.actor -> FXCollections.observableArrayList[Message]())
@@ -42,11 +40,15 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
     case ErrorNewChatId(detail) => Utility.createErrorAlertDialog("Chat", detail)
 
     case NewChatIdRes(chatId, chatName) =>
+        val newChatModel = new Chat(chatId, chatName,ListBuffer.empty)
+        this.restClient.tell(SetChatMsg(newChatModel), self)
+    case ErrorSetChat(detail) => Utility.createErrorAlertDialog("Chat", detail)
+    case OkSetChatMsg(chat) =>
       Platform.runLater(() => {
-        val newChat = context.actorOf(Props(new ChatActor(chatName)), chatName)
-        //TODO notifica lo User con RestClient -> Creazione di una nuova Chat??
+        val newChat = context.actorOf(Props(new ChatActor(chat.getTitle)), chat.getTitle)
         this.mapOfChats += (newChat -> FXCollections.observableArrayList[Message])
-        this.chats.add(new ChatWrapper(new Chat(chatId, chatName,ListBuffer.empty), Seq(currentUser), newChat))
+        this.chats.add(new ChatWrapper(chat, Seq(currentUser), newChat))
+
       })
 
     case RemoveChatButtonMsg(removeWho)=> Platform.runLater(() => {

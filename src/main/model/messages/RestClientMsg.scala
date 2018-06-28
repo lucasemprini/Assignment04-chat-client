@@ -29,7 +29,7 @@ final case class GetChat(id: String)
 
 final case class SetChatMsg(chat: Chat)
 
-final case class OkSetChatMsg()
+final case class OkSetChatMsg(chat: Chat)
 
 final case class GetNewChatId(chatName: String)
 

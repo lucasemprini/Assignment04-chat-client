@@ -207,7 +207,7 @@ class RestClient extends Actor {
       POSTReq("/chats/" + chat.getId + "/head", chat.queryParams, resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         if (Json.fromObjectString(body).getBoolean(RESULT)) {
-          actSender ! OkSetChatMsg
+          actSender ! OkSetChatMsg(chat)
         } else {
           actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
         }
