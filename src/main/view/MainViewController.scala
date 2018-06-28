@@ -8,12 +8,11 @@ import javafx.scene.paint.Color
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
-import model.ChatWrapper
+import model.{ChatWrapper, Utility}
 import model.actors.GUIActor
 import model.messages._
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 
 object MainViewController {
@@ -28,6 +27,8 @@ object MainViewController {
   private val LABEL_DEFAULT_COLOR = Color.valueOf("#bcb2b2")
   private val GLOBAL_CHATS = "GLOBAL CHATS"
   private val MY_CHATS = "MY CHATS - "
+  private val CHOICE_BOX_FONT = "-fx-font: 20px \"Default\";"
+  private val LIST_ITEM_FONT = "-fx-font: 16px \"Default\";"
 }
 
 class MainViewController {
@@ -50,7 +51,6 @@ class MainViewController {
   var choiceBox: ChoiceBox[String] = _
 
   private var guiActor: ActorRef = _
-  //TODO cambiare TIPO dello user ??
   private var user: User = _
   private var restClient: ActorRef = _
   private var addCounter = 0
@@ -80,7 +80,7 @@ class MainViewController {
     */
   private def setGUIActor(): Unit = {
     this.guiActor =
-    ActorSystem.create("MySystem").actorOf(Props(new GUIActor(
+    ActorSystem.create(Utility.SYSTEM_NAME).actorOf(Props(new GUIActor(
         this.chatList.getItems,
         this.mapOfChats,
         this.listOfMessages.getItems,
@@ -96,7 +96,7 @@ class MainViewController {
     */
   private def setChoiceBox(): Unit = {
     this.choiceBox.setPrefWidth(100)
-    this.choiceBox.setStyle("-fx-font: 20px \"Default\";")
+    this.choiceBox.setStyle(MainViewController.CHOICE_BOX_FONT)
     this.choiceBox.setItems(FXCollections.observableArrayList[String](
       MainViewController.GLOBAL_CHATS, MainViewController.MY_CHATS + user.getName))
     this.choiceBox.getSelectionModel.selectFirst()
@@ -161,7 +161,7 @@ class MainViewController {
         else {
           setText(item.chatModel.getTitle + "\n"
             + " - Members: " + item.members.mkString(", "))
-          setStyle("-fx-font: 16px \"Default\";")
+          setStyle(MainViewController.LIST_ITEM_FONT)
         }
       }
     })

@@ -5,6 +5,7 @@ import javafx.event.ActionEvent
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.{Alert, Button}
 import javafx.stage.Stage
+import model.Utility
 import model.actors.PreGUIActor
 import model.messages.UserSelected
 import view.InitialWindowController
@@ -12,13 +13,13 @@ import view.InitialWindowController
 class Main extends Application {
 
   val DEBUG = true
-  private val preActor = ActorSystem.create("MySystem").actorOf(Props(new PreGUIActor()))
+  private val preActor = ActorSystem.create(Utility.SYSTEM_NAME).actorOf(Props(new PreGUIActor()))
 
   override def start(primaryStage: Stage) {
 
     val initialWindow = new InitialWindowController
     val scene = initialWindow.selectDimensionScene
-    primaryStage.setTitle("WELCOME TO BETTER ACTORS CHAT")
+    primaryStage.setTitle("WELCOME TO " +  Utility.WINDOW_TITLE)
     primaryStage.setScene(scene)
     this.addListenerToOkButton(initialWindow.setUpOkButton(), initialWindow, primaryStage)
     scene.getWindow.centerOnScreen()

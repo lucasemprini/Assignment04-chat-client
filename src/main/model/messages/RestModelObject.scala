@@ -1,7 +1,6 @@
 package model.messages
 
 import java.text.SimpleDateFormat
-import java.util.Date
 
 import io.vertx.core.json.Json
 

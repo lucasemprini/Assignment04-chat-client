@@ -11,4 +11,7 @@ object Utility {
     alert.setContentText(detail)
     alert.showAndWait()
   }
+  val SYSTEM_NAME: String = "MySystem"
+  val LAYOUT_PATH = "/view/view.fxml"
+  val WINDOW_TITLE = "BETTER ACTORS CHAT"
 }

@@ -17,10 +17,7 @@ import model.messages._
 import view.MainViewController
 
 class PreGUIActor extends Actor {
-
-  val LAYOUT_PATH = "/view/view.fxml"
-  val WINDOW_TITLE = "BETTER ACTORS CHAT"
-  private val restClient = ActorSystem.create("MySystem").actorOf(Props(new RestClient()))
+  private val restClient = ActorSystem.create(Utility.SYSTEM_NAME).actorOf(Props(new RestClient()))
   private var mainStage: Stage = _
   private var userIdChosen: String = ""
   private var userName: String = ""
@@ -110,9 +107,9 @@ class PreGUIActor extends Actor {
     */
   @throws[IOException]
   private def initGui(primaryStage: Stage, userName: String): FXMLLoader = {
-    val loader = new FXMLLoader(getClass.getResource(LAYOUT_PATH))
+    val loader = new FXMLLoader(getClass.getResource(Utility.LAYOUT_PATH))
     val root = loader.load().asInstanceOf[AnchorPane]
-    primaryStage.setTitle(WINDOW_TITLE + " - " + userName)
+    primaryStage.setTitle(Utility.WINDOW_TITLE + " - " + userName)
     primaryStage.setScene(new Scene(root))
     primaryStage.setOnCloseRequest((_) => {
       Platform.exit()

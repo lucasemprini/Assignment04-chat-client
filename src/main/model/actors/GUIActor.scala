@@ -17,28 +17,27 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
 
   override def receive(): Receive = {
     case SetupViewMsg() => restClient.tell(UserChatsMsg(currentUser, self), self)
+    case ErrorUserReq(detail) => Utility.createErrorAlertDialog("User", detail)
     case UserRes(user) =>
       currentUser = user
       this.currentUser.chats.foreach(c => {
         this.restClient.tell(GetChatMsg(c), self)
       })
+    case ErrorChatReq(detail) => Utility.createErrorAlertDialog("Chat", detail)
     case ChatRes(chatModelObject) =>
       this.chats.add(chatModelObject)
       this.mapOfChats += (chatModelObject.actor -> FXCollections.observableArrayList[Message]())
       chatModelObject.chatModel.getMessage.foreach(m => this.mapOfChats(chatModelObject.actor).add(m))
 
-    case ErrorChatReq(detail) => Utility.createErrorAlertDialog("Chat", detail)
-
     case SendButtonMsg(message, listOfMessages, sender) =>
       Platform.runLater(() => {
         this.mapOfChats(sender).add(new Message(System.currentTimeMillis(), message, currentUser.getName))
       })
+
       //TODO this.restClient.nonLoSO -> Inviare un messaggio??
     case NewChatButtonMsg(_, chatName) =>
       restClient.tell(GetNewChatId(chatName), self)
-
     case ErrorNewChatId(detail) => Utility.createErrorAlertDialog("Chat", detail)
-
     case NewChatIdRes(chatId, chatName) =>
         val newChatModel = new Chat(chatId, chatName,ListBuffer.empty)
         this.restClient.tell(SetChatMsg(newChatModel), self)
@@ -58,6 +57,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       //TODO notifica lo User con RestClient -> Rimuovere una Chat??
       context.stop(removeWho.actor)
     })
+
     case ChatSelectedMSg(selected) =>
       Platform.runLater(() => {
           this.currentChat = mapOfChats(selected)
