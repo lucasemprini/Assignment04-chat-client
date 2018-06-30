@@ -202,7 +202,7 @@ class RestClient extends Actor {
               val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
               messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
             })
-            actSender ! ChatRes(new ChatWrapper(new Chat(chatId, title, messages), Seq[User]()))
+            actSender ! ChatRes(new ChatWrapper(new Chat(chatId, title, messages), users))
           } else {
             actSender ! ErrorChatReq(data.getString(DETAILS))
           }
