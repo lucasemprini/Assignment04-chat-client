@@ -59,7 +59,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
 
     case RemoveChatButtonMsg(removeWho)=> this.restClient.tell(RemoveChatToUserMsg(this.currentUser.getId, removeWho), self)
     case ErrorRemoveChatToUser(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
-    case OkRemoveChatToUserMsg(chat) => Platform.runLater(() => {
+    case OkRemoveChatToUserMsg(chat, _, _) => Platform.runLater(() => {
       this.chats.remove(chat)
       this.currentChat.clear()
       this.mapOfChats -= chat

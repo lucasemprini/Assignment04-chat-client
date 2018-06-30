@@ -29,7 +29,7 @@ class RestTester() extends TestKit(ActorSystem("MySystem")) with ImplicitSender
   val chat: Chat = probe.expectMsgType[ChatMsgRes](50000 millis).chat*/
 
 
-  client tell (AddChatToUserMsg("jacopo47", "17"), probe.ref)
+  client tell (GetChatMsg("1"), probe.ref)
 
-  probe.expectMsgType[OkAddChatToUserMsg](50000 millis)
+  probe.expectMsgType[ChatRes](50000 millis)
 }

@@ -15,11 +15,11 @@ final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
 final case class AddChatToUserMsg(userId: String, chatId: String)
 
-final case class OkAddChatToUserMsg()
+final case class OkAddChatToUserMsg(addChatToUserDetails: String, addUserToChatDetails: String)
 
 final case class RemoveChatToUserMsg(userId: String, chat: ChatWrapper)
 
-final case class OkRemoveChatToUserMsg(chat: ChatWrapper)
+final case class OkRemoveChatToUserMsg(chat: ChatWrapper, remChatToUserDetails: String, remUserToChatDetails: String)
 
 final case class GetChatMsg(id: String)
 

@@ -32,6 +32,8 @@ object RestClient {
   val SENDER: String = "sender"
   val ID: String = "id"
   val TITLE: String = "title"
+  val MEMBERS: String = "members"
+  val NAME: String = "name"
 }
 
 
@@ -136,14 +138,23 @@ class RestClient extends Actor {
       params.put("chat", chatId)
       POSTReq("/user/" + userId + "/chats", params.toMap, resBody => {
         val body = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
-
-        if (body.getBoolean(RESULT)) {
-          actSender ! OkAddChatToUserMsg()
-        } else {
-          actSender ! ErrorAddChatToUser(body.getString(DETAILS))
+        var addMemberDetails: String = ""
+        try {
+          if (!body.getBoolean(RESULT + "_chats")) {
+            addMemberDetails = body.getString(DETAILS + "_chats")
+          }
+        } catch {
+          case _: Exception => addMemberDetails = ""
         }
+
+        var addChatDetails: String = ""
+        if (!body.getBoolean(RESULT)) {
+          addChatDetails =  body.getString(DETAILS)
+        }
+
+        actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails)
       }, _ => {
-        actSender ! ErrorAddChatToUser("Impossibile ciao associare la chat: " + chatId + " all'utente: " + userId)
+        actSender ! ErrorAddChatToUser("Impossibile associare la chat: " + chatId + " all'utente: " + userId)
       })
 
     case RemoveChatToUserMsg(userId, chat) =>
@@ -153,11 +164,21 @@ class RestClient extends Actor {
       POSTReq("/user/" + userId + "/removeChats", params.toMap, resBody => {
         val body = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
 
-        if (body.getBoolean(RESULT)) {
-          actSender ! OkRemoveChatToUserMsg(chat)
-        } else {
-          actSender ! ErrorRemoveChatToUser(body.getString(DETAILS))
+        var remMemberDetails: String = ""
+        try {
+          if (!body.getBoolean(RESULT + "_chats")) {
+            remMemberDetails = body.getString(DETAILS + "_chats")
+          }
+        } catch {
+          case _: Exception => remMemberDetails = ""
         }
+
+        var remChatDetails: String = ""
+        if (!body.getBoolean(RESULT)) {
+          remChatDetails = body.getString(DETAILS)
+        }
+
+        actSender ! OkRemoveChatToUserMsg(chat, remChatDetails, remMemberDetails)
       }, _ => {
         actSender ! ErrorRemoveChatToUser("Impossibile ciao associare la chat: " + chat.chatModel.getId + " all'utente: " + userId)
       })
@@ -167,12 +188,16 @@ class RestClient extends Actor {
       val actSender: ActorRef = sender()
       val messages: ListBuffer[Message] = ListBuffer()
       val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/chats/" + chatId))
-
+      var users: Seq[User] = Seq()
       handleResponse(responseFuture, resBody => {
         resBody.map(body => {
           val data: JsonObject = Json.fromObjectString(body)
           if (data.getBoolean(RESULT)) {
             val title = data.getString(TITLE)
+            data.getJsonArray(MEMBERS) forEach (jsonUser => {
+              val user: JsonObject = Json.fromObjectString(jsonUser.toString)
+              users = users :+ new User(user.getString(ID), user.getString(NAME))
+            })
             data.getJsonArray(CHAT) forEach (jsonMsg => {
               val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
               messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
