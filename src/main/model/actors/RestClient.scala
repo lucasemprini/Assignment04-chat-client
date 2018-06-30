@@ -9,9 +9,9 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.lang.scala.json.{Json, JsonObject}
 import io.vertx.scala.core.Vertx
 import io.vertx.scala.ext.web.client.WebClient
-import model.ChatWrapper
 import model.actors.RestClient._
 import model.messages._
+import model.{ChatWrapper, Log}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -23,7 +23,8 @@ object RestClient {
   def props(): Props = Props(new RestClient)
 
   val URL_PREFIX = "https://assignment04-chat-server.herokuapp.com"
-  val URL = "assignment04-chat-server.herokuapp.com"
+  val URL = "localhost"//assignment04-chat-server.herokuapp.com"
+  val PORT = 4700
   val RESULT = "result"
   val DETAILS = "details"
   val CHAT: String = "chat"
@@ -70,51 +71,44 @@ class RestClient extends Actor {
     //USER
     case UserMsg(id) =>
       val actSender: ActorRef = sender()
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/user/" + id))
 
-      handleResponse(responseFuture, resBody => {
-        resBody.map(body => {
-          val data = new JsonObject(body)
+      GETReq("/user/" + id, resBody => {
+        val body = resBody.bodyAsString().getOrElse("")
+        val data = new JsonObject(body)
 
-          if (data.getBoolean(RESULT)) {
-            val jsonUser = data.getJsonObject("user")
-            val user = new User(id, jsonUser.getString("name"))
-            self ! UserChatsMsg(user, actSender)
-          } else {
-            actSender ! ErrorUserReq(data.getString(DETAILS))
-          }
-        })
+        if (data.getBoolean(RESULT)) {
+          val jsonUser = data.getJsonObject("user")
+          val user = new User(id, jsonUser.getString("name"))
+          self ! UserChatsMsg(user, actSender)
+        } else {
+          actSender ! ErrorUserReq(data.getString(DETAILS))
+        }
       }, failRes => {
-        println("fail, status code: " + failRes.status)
-        actSender ! ErrorUserReq("Errore nella comunicazione con il server: " + failRes.entity.toString)
+        actSender ! ErrorUserReq("Errore nella comunicazione con il server: " + failRes.getMessage)
       })
 
     case UserChatsMsg(msgUser, sender) =>
       val fromUser: Boolean = if (sender == null) false else true
       val actSender: ActorRef = if (sender == null) self else sender
       val user: User = new User(msgUser)
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/user/" + user.getId + "/chats"))
-
-      handleResponse(responseFuture, resBody => {
-        resBody.map(body => {
-          val data = Json.fromObjectString(body)
-          if (data.getBoolean(RESULT)) {
-            data.getJsonArray("chats").getList.forEach(e => user.addChat(e.toString))
-            actSender ! UserRes(user)
-          } else {
-            if (fromUser) {
-              actSender ! ErrorUserReq(data.getString(DETAILS))
-            } else {
-              actSender ! ErrorChatsReq(data.getString(DETAILS))
-            }
-          }
-        })
-      }, failRes => {
-        println("fail, status code: " + failRes.status)
-        if (fromUser) {
-          actSender ! ErrorUserReq("Errore nella comunicazione con il server: " + failRes.entity.toString)
+      GETReq("/user/" + user.getId + "/chats", resBody => {
+        val body = resBody.bodyAsString().getOrElse("")
+        val data = Json.fromObjectString(body)
+        if (data.getBoolean(RESULT)) {
+          data.getJsonArray("chats").getList.forEach(e => user.addChat(e.toString))
+          actSender ! UserRes(user)
         } else {
-          actSender ! ErrorChatsReq("Errore nella comunicazione con il server: " + failRes.entity.toString)
+          if (fromUser) {
+            actSender ! ErrorUserReq(data.getString(DETAILS))
+          } else {
+            actSender ! ErrorChatsReq(data.getString(DETAILS))
+          }
+        }
+      }, failRes => {
+        if (fromUser) {
+          actSender ! ErrorUserReq("Errore nella comunicazione con il server: " + failRes.getMessage)
+        } else {
+          actSender ! ErrorChatsReq("Errore nella comunicazione con il server: " + failRes.getMessage)
         }
       })
 
@@ -149,7 +143,7 @@ class RestClient extends Actor {
 
         var addChatDetails: String = ""
         if (!body.getBoolean(RESULT)) {
-          addChatDetails =  body.getString(DETAILS)
+          addChatDetails = body.getString(DETAILS)
         }
 
         actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails)
@@ -187,44 +181,38 @@ class RestClient extends Actor {
     case GetChatMsg(chatId) =>
       val actSender: ActorRef = sender()
       val messages: ListBuffer[Message] = ListBuffer()
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/chats/" + chatId))
       var users: Seq[User] = Seq()
-      handleResponse(responseFuture, resBody => {
-        resBody.map(body => {
-          val data: JsonObject = Json.fromObjectString(body)
-          if (data.getBoolean(RESULT)) {
-            val title = data.getString(TITLE)
-            data.getJsonArray(MEMBERS) forEach (jsonUser => {
-              val user: JsonObject = Json.fromObjectString(jsonUser.toString)
-              users = users :+ new User(user.getString(ID), user.getString(NAME))
-            })
-            data.getJsonArray(CHAT) forEach (jsonMsg => {
-              val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
-              messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
-            })
-            actSender ! ChatRes(new ChatWrapper(new Chat(chatId, title, messages), users))
-          } else {
-            actSender ! ErrorChatReq(data.getString(DETAILS))
-          }
-        })
+
+      GETReq("/chats/" + chatId, resBody => {
+        val body = resBody.bodyAsString().getOrElse("")
+        val data: JsonObject = Json.fromObjectString(body)
+        if (data.getBoolean(RESULT)) {
+          val title = data.getString(TITLE)
+          data.getJsonArray(MEMBERS) forEach (jsonUser => {
+            val user: JsonObject = Json.fromObjectString(jsonUser.toString)
+            users = users :+ new User(user.getString(ID), user.getString(NAME))
+          })
+          data.getJsonArray(CHAT) forEach (jsonMsg => {
+            val msg: JsonObject = Json.fromObjectString(jsonMsg.toString)
+            messages += new Message(msg.getLong(TIMESTAMP), msg.getString(MSG), msg.getString(SENDER))
+          })
+          actSender ! ChatRes(new ChatWrapper(new Chat(chatId, title, messages), users))
+        } else {
+          actSender ! ErrorChatReq(data.getString(DETAILS))
+        }
       }, failRes => {
-        println("fail, status code: " + failRes.status)
-        actSender ! ErrorChatReq("Errore nella comunicazione con il server: " + failRes.entity.toString)
+        actSender ! ErrorChatReq("Errore nella comunicazione con il server: " + failRes.getMessage)
       })
 
     case GetNewChatId(chatName) =>
       val actSender: ActorRef = sender()
-      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(uri = URL_PREFIX + "/chats/new/"))
-
-      handleResponse(responseFuture, resBody => {
-        resBody.map(body => {
-          val id: String = Json.fromObjectString(body).getString(ID)
-          self ! SetChatMsg(new Chat(id, chatName, ListBuffer.empty))
-          actSender ! NewChatIdRes(id, chatName)
-        })
+      GETReq("/chats/new/", resBody => {
+        val body = resBody.bodyAsString().getOrElse("")
+        val id: String = Json.fromObjectString(body).getString(ID)
+        self ! SetChatMsg(new Chat(id, chatName, ListBuffer.empty))
+        actSender ! NewChatIdRes(id, chatName)
       }, failRes => {
-        println("fail, status code: " + failRes.status)
-        actSender ! ErrorNewChatId("Errore nella comunicazione con il server: " + failRes.entity.toString)
+        actSender ! ErrorNewChatId("Errore nella comunicazione con il server: " + failRes.getMessage)
       })
 
     case SetChatMsg(chat) =>
@@ -243,7 +231,14 @@ class RestClient extends Actor {
 
   }
 
-
+  /**
+    *
+    * @param future
+    * @param onSuccess
+    * @param onFail
+    * @return
+    */
+  @deprecated
   private def handleResponse(future: Future[HttpResponse], onSuccess: Future[String] => Unit, onFail: HttpResponse => Unit) = {
     future.map {
       case response@HttpResponse(akka.http.scaladsl.model.StatusCodes.OK, _, _, _) => onSuccess(Unmarshal(response.entity).to[String])
@@ -264,9 +259,18 @@ class RestClient extends Actor {
         complexUri.append("&" + k + "=" + v)
       }
     }
-    client.post(URL, complexUri.toString).sendFuture().onComplete {
-      case Success(result) => onSuccess(result)
-      case Failure(cause) => cause.printStackTrace(); onFail(cause)
+
+
+    Log.debug("Start -> POST: " + URL + complexUri.toString)
+    val future = if (PORT != 0) client.post(PORT, URL, complexUri.toString) else client.post(URL, complexUri.toString)
+    future.sendFuture().onComplete {
+      case Success(result) =>
+        Log.debug("Stop <- POST: " +  URL + complexUri.toString)
+        onSuccess(result)
+      case Failure(cause) =>
+        Log.debug("Stop /w FAIL <- POST: " +  URL + complexUri.toString)
+        cause.printStackTrace()
+        onFail(cause)
     }
   }
 
@@ -284,9 +288,17 @@ class RestClient extends Actor {
         }
       }
     }
-    client.get(URL, complexUri.toString).sendFuture().onComplete {
-      case Success(result) => onSuccess(result)
-      case Failure(cause) => cause.printStackTrace(); onFail(cause)
+
+    Log.debug("Start -> GET: " + URL + complexUri.toString)
+    val future = if (PORT != 0) client.get(PORT, URL, complexUri.toString) else client.get(URL, complexUri.toString)
+    future.sendFuture().onComplete {
+      case Success(result) =>
+        Log.debug("Stop <- GET: " +  URL + complexUri.toString)
+        onSuccess(result)
+      case Failure(cause) =>
+        Log.debug("Stop /w FAIL <- GET: " +  URL + complexUri.toString)
+        cause.printStackTrace();
+        onFail(cause)
     }
   }
 }
