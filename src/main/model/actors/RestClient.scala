@@ -23,8 +23,8 @@ object RestClient {
   def props(): Props = Props(new RestClient)
 
   val URL_PREFIX = "https://assignment04-chat-server.herokuapp.com"
-  val URL = "localhost"//assignment04-chat-server.herokuapp.com"
-  val PORT = 4700
+  val URL = "assignment04-chat-server.herokuapp.com"
+  val PORT = 0
   val RESULT = "result"
   val DETAILS = "details"
   val CHAT: String = "chat"
