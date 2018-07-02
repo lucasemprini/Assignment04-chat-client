@@ -99,7 +99,7 @@ class RestClient extends Actor {
           actSender ! UserRes(user)
         } else {
           if (fromUser) {
-            actSender ! ErrorUserReq(data.getString(DETAILS))
+            actSender ! UserRes(user)
           } else {
             actSender ! ErrorChatsReq(data.getString(DETAILS))
           }
