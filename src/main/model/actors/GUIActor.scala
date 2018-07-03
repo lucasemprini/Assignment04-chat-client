@@ -26,8 +26,6 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
     case ErrorChatReq(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case ChatRes(chatModelObject) =>
       Platform.runLater(() => {
-        println("Chat presa da heroku! Membri: " + chatModelObject.members
-          + chatModelObject.chatModel.getMessage)
         if(!this.chats.contains(chatModelObject)) this.chats.add(chatModelObject)
         if(!this.mapOfChats.isDefinedAt(chatModelObject)) {
           this.mapOfChats += (chatModelObject -> FXCollections.observableArrayList[Message]())
@@ -56,6 +54,10 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.chats.add(newChatWrapper)
 
       })
+
+    case JoinButtonMsg(toJoin) =>
+      //TODO NOTIFICARE IL SERVER DELL'AGGIUNTA DI UN MEMBRO
+      toJoin.members :+ currentUser
 
     case RemoveChatButtonMsg(removeWho)=> this.restClient.tell(RemoveChatToUserMsg(this.currentUser.getId, removeWho), self)
     case ErrorRemoveChatToUser(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))

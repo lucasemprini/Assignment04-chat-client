@@ -24,6 +24,7 @@ object MainViewController {
   private val DIALOG_PREF_HEIGHT = 120
   private val DIALOG_PREF_WIDTH = 280
   private val LABEL_DEFAULT_TEXT = "Select a chat where to send a message:"
+  private val LABEL_JOIN_TEXT = "Join this chat!"
   private val LABEL_DEFAULT_COLOR = Color.valueOf("#bcb2b2")
   private val GLOBAL_CHATS = "GLOBAL CHATS"
   private val MY_CHATS = "MY CHATS - "
@@ -43,6 +44,8 @@ class MainViewController {
   var labelActorInfo: Label = _
   @FXML
   var sendButton: Button = _
+  @FXML
+  var joinChatButton: Button = _
   @FXML
   var addButton: Button = _
   @FXML
@@ -70,7 +73,7 @@ class MainViewController {
     //this.chatList.setItems()
     this.setGUIActor()
     this.setChoiceBox()
-    this.setViewComponents(areDisabled = true, areWeInSend = false)
+    this.setViewComponents(areDisabled = true, areWeInSend = false, isChatMine = false)
     this.setUpListView()
     this.addButton.setOnAction((_: ActionEvent) => this.setDialogWindow())
   }
@@ -117,10 +120,17 @@ class MainViewController {
     *                    se è false vuol dire che siamo in altre situazioni, quindi setta
     *                    il bottone Remove a areDisabled.
     */
-  private def setViewComponents(areDisabled: Boolean, areWeInSend: Boolean): Unit = {
+  private def setViewComponents(areDisabled: Boolean, areWeInSend: Boolean, isChatMine: Boolean): Unit = {
+    this.sendButton.setVisible(!isChatMine)
+    this.joinChatButton.setVisible(isChatMine)
     this.sendButton.setDisable(areDisabled)
-    if (areWeInSend) textArea.clear()
-    else this.removeButton.setDisable(areDisabled)
+    if(isChatMine) {
+      if (areWeInSend) textArea.clear()
+      else this.removeButton.setDisable(areDisabled)
+    } else {
+      this.joinChatButton.setDisable(areDisabled)
+      this.labelActorInfo.setText(MainViewController.LABEL_JOIN_TEXT)
+    }
     this.textArea.setDisable(areDisabled)
     this.labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
@@ -171,17 +181,22 @@ class MainViewController {
         if (!this.chatList.getItems.isEmpty && currentChat != null) {
 
           this.invokeGuiActorForSelectedChat(currentChat)
-          this.setViewComponents(areDisabled = false, areWeInSend = false)
+          this.setViewComponents(areDisabled = false, areWeInSend = false, currentChat.members.contains(user))
           this.listOfMessages.setItems(this.mapOfChats(currentChat))
 
           this.sendButton.setOnAction((_: ActionEvent) => {
             this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
-            this.setViewComponents(areDisabled = true, areWeInSend = true)
+            this.setViewComponents(areDisabled = true, areWeInSend = true, currentChat.members.contains(user))
+          })
+
+          this.joinChatButton.setOnAction((_: ActionEvent) => {
+            this.invokeGuiActorForJoinMsg(currentChat)
+            this.setViewComponents(areDisabled = true, areWeInSend = false, currentChat.members.contains(user))
           })
 
           this.removeButton.setOnAction((_: ActionEvent) => {
             this.invokeGuiActorForRemoveChat(currentChat)
-            this.setViewComponents(areDisabled = true, areWeInSend = false)
+            this.setViewComponents(areDisabled = true, areWeInSend = false, currentChat.members.contains(user))
           })
         }
     })
@@ -223,6 +238,10 @@ class MainViewController {
     */
   private def invokeGuiActorForSelectedChat(currentChat: ChatWrapper): Unit = {
     guiActor.tell(ChatSelectedMSg(currentChat), ActorRef.noSender)
+  }
+
+  private def invokeGuiActorForJoinMsg(currentChat: ChatWrapper): Unit = {
+    //TODO
   }
 }
 

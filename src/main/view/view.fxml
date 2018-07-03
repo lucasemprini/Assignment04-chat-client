@@ -36,10 +36,21 @@
                   </top>
                   <bottom>
                      <AnchorPane BorderPane.alignment="CENTER">
-                        <Button fx:id="sendButton" mnemonicParsing="false" text="Send" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="sendButton" mnemonicParsing="false" text="Send"
+                                AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <font>
                               <Font size="18.0" />
-                           </font></Button>
+                           </font>
+                        </Button>
+                        <Button fx:id="joinChatButton" mnemonicParsing="false" text="JOIN CHAT"
+                                visible="false"
+                                AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <font>
+                              <Font size="18.0" />
+                           </font>
+                        </Button>
                      </AnchorPane>
                   </bottom>
                </BorderPane>

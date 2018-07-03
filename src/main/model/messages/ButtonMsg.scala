@@ -9,6 +9,8 @@ trait ButtonMsg{}
 
 final case class SendButtonMsg(message: String, listOfMessages: ObservableList[Message], sender: ChatWrapper )
 
+final case class JoinButtonMsg(toJoin: ChatWrapper )
+
 final case class NewChatButtonMsg(listOfChats: ObservableList[ChatWrapper], chatName: String)
 
 final case class RemoveChatButtonMsg(removeWho: ChatWrapper)
