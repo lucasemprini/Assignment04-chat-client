@@ -35,22 +35,32 @@ final case class GetNewChatId(chatName: String)
 
 final case class ChatIdRes(chatId: String)
 
+final case class GetAllChats()
+
+final case class OKGetAllChats(chatsId: Seq[String])
+
 final case class SetUserMsg(user: User)
 
 final case class OKSetUserMsg(user: User)
 
-final case class ErrorUserReq(detail: String)
+trait Error {
+  def detail: String
+}
 
-final case class ErrorChatsReq(detail: String)
+final case class ErrorUserReq(override val detail: String) extends Error
 
-final case class ErrorChatReq(detail: String)
+final case class ErrorChatsReq(override val detail: String) extends Error
 
-final case class ErrorNewChatId(detail: String)
+final case class ErrorChatReq(override val detail: String) extends Error
 
-final case class ErrorSetUser(detail: String)
+final case class ErrorNewChatId(override val detail: String) extends Error
 
-final case class ErrorSetChat(detail: String)
+final case class ErrorGetAllChats(override val detail: String) extends Error
 
-final case class ErrorAddChatToUser(detail: String)
+final case class ErrorSetUser(override val detail: String) extends Error
 
-final case class ErrorRemoveChatToUser(detail: String)
+final case class ErrorSetChat(override val detail: String) extends Error
+
+final case class ErrorAddChatToUser(override val detail: String) extends Error
+
+final case class ErrorRemoveChatToUser(override val detail: String) extends Error

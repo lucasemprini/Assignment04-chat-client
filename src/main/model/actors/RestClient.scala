@@ -1,13 +1,11 @@
 package model.actors
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpResponse, _}
-import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import io.vertx.core.buffer.Buffer
 import io.vertx.lang.scala.json.{Json, JsonObject}
 import io.vertx.scala.core.Vertx
+import io.vertx.scala.ext.web.client
 import io.vertx.scala.ext.web.client.WebClient
 import model.actors.RestClient._
 import model.messages._
@@ -25,6 +23,8 @@ object RestClient {
   val URL_PREFIX = "https://assignment04-chat-server.herokuapp.com"
   val URL = "assignment04-chat-server.herokuapp.com"
   val PORT = 0
+  //val URL = "localhost"
+  //val PORT = 4700
   val RESULT = "result"
   val DETAILS = "details"
   val CHAT: String = "chat"
@@ -35,6 +35,7 @@ object RestClient {
   val TITLE: String = "title"
   val MEMBERS: String = "members"
   val NAME: String = "name"
+  val CHATS: String = "chats"
 }
 
 
@@ -209,7 +210,7 @@ class RestClient extends Actor {
       GETReq("/chats/new/", resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         val id: String = Json.fromObjectString(body).getString(ID)
-        self ! SetChatMsg(new Chat(id, chatName, ListBuffer.empty))
+        //self ! SetChatMsg(new Chat(id, chatName, ListBuffer.empty))
         actSender ! NewChatIdRes(id, chatName)
       }, failRes => {
         actSender ! ErrorNewChatId("Errore nella comunicazione con il server: " + failRes.getMessage)
@@ -228,26 +229,29 @@ class RestClient extends Actor {
         actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
       })
 
+    case GetAllChats() =>
+      val actSender: ActorRef = sender()
+
+      GETReq("/allChats", resBody => {
+          val data = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
+
+          if (data.getBoolean(RESULT)) {
+            var chatsId: Seq[String] = Seq()
+
+            data.getJsonArray(CHATS).forEach(id => chatsId = chatsId :+ id.toString)
+
+            actSender ! OKGetAllChats(chatsId)
+          } else {
+            actSender ! ErrorGetAllChats(data.getString(DETAILS))
+          }
+
+      }, _ => {
+        actSender ! ErrorSetChat("Errore durante la richiesta di tutte le chat")
+      })
 
   }
 
-  /**
-    *
-    * @param future
-    * @param onSuccess
-    * @param onFail
-    * @return
-    */
-  @deprecated
-  private def handleResponse(future: Future[HttpResponse], onSuccess: Future[String] => Unit, onFail: HttpResponse => Unit) = {
-    future.map {
-      case response@HttpResponse(akka.http.scaladsl.model.StatusCodes.OK, _, _, _) => onSuccess(Unmarshal(response.entity).to[String])
-      case failRes@_ => onFail(failRes)
-    }
-  }
-
-
-  private def POSTReq(uri: String, params: Map[String, String], onSuccess: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
+  private def POSTReq(uri: String, params: Map[String, String], onSuccess: client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
     val client = WebClient.create(Vertx.vertx())
     val complexUri = new StringBuffer(uri)
     var first: Boolean = true
@@ -274,7 +278,7 @@ class RestClient extends Actor {
     }
   }
 
-  private def GETReq(uri: String, onSuccess: io.vertx.scala.ext.web.client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit, params: Map[String, String] = null): Unit = {
+  private def GETReq(uri: String, onSuccess: client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit, params: Map[String, String] = null): Unit = {
     val client = WebClient.create(Vertx.vertx())
     val complexUri = new StringBuffer(uri)
     var first: Boolean = true
