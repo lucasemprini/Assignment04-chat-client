@@ -1,4 +1,6 @@
 
+import java.awt.{Image, SystemTray, Toolkit, TrayIcon}
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.application.Application
 import javafx.event.ActionEvent
@@ -6,7 +8,7 @@ import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.{Alert, Button}
 import javafx.stage.Stage
 import model.Utility
-import model.actors.PreGUIActor
+import model.actors.{ChatActor, PreGUIActor}
 import model.messages.UserSelected
 import view.InitialWindowController
 
@@ -46,5 +48,6 @@ class Main extends Application {
 object Main {
   def main(args: Array[String]) {
     Application.launch(classOf[Main], args: _*)
+
   }
 }

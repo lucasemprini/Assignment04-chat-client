@@ -1,18 +1,20 @@
 package model.actors
 
+import java.awt.{Image, Toolkit, TrayIcon}
 import java.net.InetSocketAddress
 
-import scala.concurrent._
-import ExecutionContext.Implicits.global
 import akka.actor.{Actor, ActorSystem, Props}
 import io.vertx.lang.scala.json.Json
-import model.{ChatWrapper, Log}
+import model.ChatWrapper
 import model.actors.ChatActor.{HOST, PASSWORD, PORT}
+import model.actors.GUIActor.trayIcon
 import model.actors.RestClient.{MSG, SENDER}
 import model.messages.{ErrorOnSendMessage, OKSendMessage, SendMessage, User}
 import redis.RedisClient
 import redis.actors.RedisSubscriberActor
 import redis.api.pubsub.{Message, PMessage}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ChatActor {
   var HOST: String = ""
@@ -27,6 +29,7 @@ class ChatActor(val chatId: String, val chatName: String, val user: User, val on
   val channel: String = "chat." + chatId
   val channels = Seq(channel)
   val patterns = Seq()
+
 
   HOST = System.getenv("REDIS_HOST")
   PORT = System.getenv("REDIS_PORT").toInt
@@ -70,11 +73,16 @@ class SubscribeActor(channels: Seq[String] = Nil, patterns: Seq[String] = Nil, o
     }) {
   implicit val akkaSystem: ActorSystem = akka.actor.ActorSystem()
 
+
+
   def onMessage(message: Message) {
+
+
     val complexMsg = Json.fromObjectString(message.data.utf8String)
     var sender = complexMsg.getString(SENDER)
     if (sender == null) sender = "unknown"
     val msg = complexMsg.getString(MSG)
+
 
     onMessageReceived(msg, sender)
   }

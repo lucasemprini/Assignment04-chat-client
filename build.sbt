@@ -4,6 +4,8 @@ version := "0.1"
 
 scalaVersion := "2.12.6"
 
+resolvers += "jitpack" at "https://jitpack.io"
+
 
 scalaSource in Compile := baseDirectory.value / "src/main"
 
@@ -23,3 +25,4 @@ libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.4" % Test
 libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.3"
 libraryDependencies += "io.vertx" %% "vertx-lang-scala" % "3.5.2"
 libraryDependencies += "io.vertx" %% "vertx-web-client-scala" % "3.5.2"
+libraryDependencies += "com.github.PlusHaze" % "TrayNotification" % "-SNAPSHOT"
