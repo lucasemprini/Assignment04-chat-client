@@ -13,9 +13,9 @@ final case class NewChatIdRes(chatId: String, chatName: String)
 
 final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
-final case class AddChatToUserMsg(userId: String, chatId: String)
+final case class AddChatToUserMsg(user: User, chat: ChatWrapper)
 
-final case class OkAddChatToUserMsg(addChatToUserDetails: String, addUserToChatDetails: String)
+final case class OkAddChatToUserMsg(addChatToUserDetails: String, addUserToChatDetails: String, chat: ChatWrapper)
 
 final case class RemoveChatToUserMsg(userId: String, chat: ChatWrapper)
 
@@ -27,9 +27,9 @@ final case class ChatMsgRes(chat: Chat)
 
 final case class GetChat(id: String)
 
-final case class SetChatMsg(chat: Chat)
+final case class SetChatMsg(chat: Chat, user: User)
 
-final case class OkSetChatMsg(chat: Chat)
+final case class OkSetChatMsg(chat: ChatWrapper)
 
 final case class GetNewChatId(chatName: String)
 

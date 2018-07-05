@@ -124,8 +124,9 @@ class MainViewController {
     this.sendButton.setVisible(!isChatMine)
     this.joinChatButton.setVisible(isChatMine)
     this.sendButton.setDisable(areDisabled)
+    this.textArea.clear()
     if(isChatMine) {
-      if (areWeInSend) textArea.clear()
+      if (areWeInSend) this.textArea.clear()
       else this.removeButton.setDisable(areDisabled)
     } else {
       this.joinChatButton.setDisable(areDisabled)

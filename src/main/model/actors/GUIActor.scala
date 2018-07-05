@@ -62,7 +62,9 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
             } else {
               popupMsg = msg.substring(0, 20).concat("...")
             }
-            val tray = new TrayNotification("New message! Chat: " + chatModelObject.chatModel.getTitle, msg, Notifications.INFORMATION)
+            val tray = new TrayNotification("New message! Chat: "
+                + chatModelObject.chatModel.getTitle,
+              currentUser.getName + " says: " + msg, Notifications.INFORMATION)
             tray.setAnimation(Animations.POPUP)
             tray.setImage(image)
             tray.showAndDismiss(Duration.seconds(4))
@@ -99,15 +101,14 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
     case ErrorNewChatId(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case NewChatIdRes(chatId, chatName) =>
       val newChatModel = new Chat(chatId, chatName, ListBuffer.empty)
-      this.restClient.tell(SetChatMsg(newChatModel), self)
+      this.restClient.tell(SetChatMsg(newChatModel, currentUser), self)
     case ErrorSetChat(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkSetChatMsg(chat) =>
-      this.restClient ! AddChatToUserMsg(currentUser.getId, chat.getId)
+      this.restClient ! AddChatToUserMsg(currentUser, chat)
       Platform.runLater(() => {
         //TODO / Ci ho messo le mani
         //Ho modificato la creazione del chat actor
-        val newChatWrapper = new ChatWrapper(chat, Seq[User](currentUser))
-        newChatWrapper.actor = context.actorOf(Props(new ChatActor(chat.getId, chat.getTitle, currentUser, (msg, msgSender) => {
+        chat.actor = context.actorOf(Props(new ChatActor(chat.chatModel.getId, chat.chatModel.getTitle, currentUser, (msg, msgSender) => {
           Platform.runLater(() => {
             var popupMsg: String = ""
             if (msg.length <= 30) {
@@ -115,20 +116,22 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
             } else {
               popupMsg = msg.substring(0, 27).concat("...")
             }
-            val tray = new TrayNotification("New message! Chat: " + newChatWrapper.chatModel.getTitle, msg, Notifications.INFORMATION)
+            val tray = new TrayNotification("New message! Chat: " + chat.chatModel.getTitle,
+              currentUser.getName + " says: " + msg, Notifications.INFORMATION)
             tray.setAnimation(Animations.POPUP)
             tray.setImage(image)
-            tray.showAndDismiss(Duration.seconds(4))            this.mapOfChats(newChatWrapper).add(new Message(System.currentTimeMillis(), msg, msgSender))
+            tray.showAndDismiss(Duration.seconds(4))
+            this.mapOfChats(chat).add(new Message(System.currentTimeMillis(), msg, msgSender))
           })
         })))
-        this.mapOfChats += (newChatWrapper -> FXCollections.observableArrayList[Message])
-        this.chats.add(newChatWrapper)
+        this.mapOfChats += (chat -> FXCollections.observableArrayList[Message])
+        this.chats.add(chat)
 
       })
 
-    case JoinButtonMsg(toJoin) =>
-      //TODO NOTIFICARE IL SERVER DELL'AGGIUNTA DI UN MEMBRO
-      toJoin.members :+ currentUser
+    case JoinButtonMsg(toJoin) => restClient ! AddChatToUserMsg(currentUser, toJoin)
+    case ErrorAddChatToUser(detail) => Platform.runLater(()=> Utility.createErrorAlertDialog("Chat", detail))
+    case OkAddChatToUserMsg(_,_, chat) => Platform.runLater(() => chat.members :+ currentUser)
 
     case RemoveChatButtonMsg(removeWho) => this.restClient.tell(RemoveChatToUserMsg(this.currentUser.getId, removeWho), self)
     case ErrorRemoveChatToUser(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
@@ -136,7 +139,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       this.chats.remove(chat)
       this.currentChat.clear()
       this.mapOfChats -= chat
-      //context.stop(removeWho.actor)
+      context.stop(chat.actor)
     })
 
     case ChatSelectedMSg(selected) =>

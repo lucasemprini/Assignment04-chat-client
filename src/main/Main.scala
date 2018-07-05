@@ -2,7 +2,7 @@
 import java.awt.{Image, SystemTray, Toolkit, TrayIcon}
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import javafx.application.Application
+import javafx.application.{Application, Platform}
 import javafx.event.ActionEvent
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.{Alert, Button}
@@ -25,6 +25,10 @@ class Main extends Application {
     primaryStage.setScene(scene)
     this.addListenerToOkButton(initialWindow.setUpOkButton(), initialWindow, primaryStage)
     scene.getWindow.centerOnScreen()
+    primaryStage.setOnCloseRequest(_ => {
+      Platform.exit()
+      System.exit(0)
+    })
     primaryStage.show()
   }
 

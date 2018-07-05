@@ -127,11 +127,11 @@ class RestClient extends Actor {
         actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
       })
 
-    case AddChatToUserMsg(userId, chatId) =>
+    case AddChatToUserMsg(user, chat) =>
       val actSender: ActorRef = sender()
       val params = new mutable.HashMap[String, String]()
-      params.put("chat", chatId)
-      POSTReq("/user/" + userId + "/chats", params.toMap, resBody => {
+      params.put("chat", chat.chatModel.getId)
+      POSTReq("/user/" + user.getId + "/chats", params.toMap, resBody => {
         val body = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
         var addMemberDetails: String = ""
         try {
@@ -147,9 +147,9 @@ class RestClient extends Actor {
           addChatDetails = body.getString(DETAILS)
         }
 
-        actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails)
+        actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails, chat)
       }, _ => {
-        actSender ! ErrorAddChatToUser("Impossibile associare la chat: " + chatId + " all'utente: " + userId)
+        actSender ! ErrorAddChatToUser("Impossibile associare la chat: " + chat.chatModel.getId + " all'utente: " + user.getId)
       })
 
     case RemoveChatToUserMsg(userId, chat) =>
@@ -216,12 +216,12 @@ class RestClient extends Actor {
         actSender ! ErrorNewChatId("Errore nella comunicazione con il server: " + failRes.getMessage)
       })
 
-    case SetChatMsg(chat) =>
+    case SetChatMsg(chat, user) =>
       val actSender: ActorRef = sender()
       POSTReq("/chats/" + chat.getId + "/head", chat.queryParams, resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         if (Json.fromObjectString(body).getBoolean(RESULT)) {
-          actSender ! OkSetChatMsg(chat)
+          actSender ! OkSetChatMsg(new ChatWrapper(chat, Seq[User](user)))
         } else {
           actSender ! ErrorSetChat("Errore durante il salvataggio dei dati della chat con id: " + chat.getId)
         }
@@ -301,7 +301,7 @@ class RestClient extends Actor {
         onSuccess(result)
       case Failure(cause) =>
         Log.debug("Stop /w FAIL <- GET: " +  URL + complexUri.toString)
-        cause.printStackTrace();
+        cause.printStackTrace()
         onFail(cause)
     }
   }

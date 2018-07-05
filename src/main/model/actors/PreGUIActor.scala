@@ -111,7 +111,7 @@ class PreGUIActor extends Actor {
     val root = loader.load().asInstanceOf[AnchorPane]
     primaryStage.setTitle(Utility.WINDOW_TITLE + " - " + userName)
     primaryStage.setScene(new Scene(root))
-    primaryStage.setOnCloseRequest((_) => {
+    primaryStage.setOnCloseRequest(_ => {
       Platform.exit()
       System.exit(0)
     })

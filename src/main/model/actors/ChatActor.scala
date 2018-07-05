@@ -7,7 +7,6 @@ import akka.actor.{Actor, ActorSystem, Props}
 import io.vertx.lang.scala.json.Json
 import model.ChatWrapper
 import model.actors.ChatActor.{HOST, PASSWORD, PORT}
-import model.actors.GUIActor.trayIcon
 import model.actors.RestClient.{MSG, SENDER}
 import model.messages.{ErrorOnSendMessage, OKSendMessage, SendMessage, User}
 import redis.RedisClient
