@@ -41,17 +41,14 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
     }
   }*/
 
-  val loadingDialog: LoadingDialog = new LoadingDialog
-  private def setUpDialog(): Unit = Platform.runLater(() => loadingDialog.setupDialog())
-  private def showDialog(): Unit = Platform.runLater(() => loadingDialog.getDialogStage.show())
-  private def closeDialog(): Unit = Platform.runLater(() => loadingDialog.getDialogStage.close())
+  private val loadingDialog: LoadingDialog = new LoadingDialog
   override def receive(): Receive = {
     case SetupViewMsg() =>
       restClient.tell(UserChatsMsg(currentUser, self), self)
-      this.setUpDialog()
-      this.showDialog()
+      Utility.setUpDialog(loadingDialog)
+      Utility.showDialog(loadingDialog)
     case ErrorUserReq(detail) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("User", detail))
     case UserRes(user) =>
       currentUser = user
@@ -59,10 +56,10 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.restClient.tell(GetChatMsg(c), self)
       })
     case ErrorChatReq(detail) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case ChatRes(chatModelObject) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       //TODO / Ci ho messo le mani
       //Ho fatto in modo che all'ottenimento di una chat viene impostato il suo corrispondente chat actor a cui passo anche la funzione da esegui
       //quando quella chat riceve un messaggio
@@ -96,7 +93,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
 
     //TODO / Ci ho messo le mani
     case SendButtonMsg(message, listOfMessages, sender) =>
-      this.showDialog()
+      Utility.showDialog(loadingDialog)
       sender.actor ! SendMessage(message, sender)
 
     //TODO / Ci ho messo le mani
@@ -104,18 +101,18 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
     //Si avrebbe lo stesso messaggio due volte se gestito anche qui l'invio
     case OKSendMessage(message, chat) =>
       Log.debug("Messaggio correttamente inviato")
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
 
     //TODO / Ci ho messo le mani
     case ErrorOnSendMessage() =>
       println("ERROR / Impossibile inviare il messaggio")
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
 
     case NewChatButtonMsg(_, chatName) =>
-      this.showDialog()
+      Utility.showDialog(loadingDialog)
       restClient.tell(GetNewChatId(chatName), self)
     case ErrorNewChatId(detail) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case NewChatIdRes(chatId, chatName) =>
       val newChatModel = new Chat(chatId, chatName, ListBuffer.empty)
@@ -123,7 +120,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
     case ErrorSetChat(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkSetChatMsg(chat) =>
       this.restClient ! AddChatToUserMsg(currentUser, chat)
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => {
         //TODO / Ci ho messo le mani
         //Ho modificato la creazione del chat actor
@@ -149,23 +146,23 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       })
 
     case JoinButtonMsg(toJoin) =>
-      this.showDialog()
+      Utility.showDialog(loadingDialog)
       restClient ! AddChatToUserMsg(currentUser, toJoin)
     case ErrorAddChatToUser(detail) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(()=> Utility.createErrorAlertDialog("Chat", detail))
     case OkAddChatToUserMsg(_,_, chat) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => chat.members :+ currentUser)
 
     case RemoveChatButtonMsg(removeWho) =>
-      this.showDialog()
+      Utility.showDialog(loadingDialog)
       this.restClient.tell(RemoveChatToUserMsg(this.currentUser.getId, removeWho), self)
     case ErrorRemoveChatToUser(detail) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkRemoveChatToUserMsg(chat, _, _) =>
-      this.closeDialog()
+      Utility.closeDialog(loadingDialog)
       Platform.runLater(() => {
         this.chats.remove(chat)
         this.currentChat.clear()

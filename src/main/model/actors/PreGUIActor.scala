@@ -14,31 +14,43 @@ import javafx.scene.layout.{AnchorPane, GridPane}
 import javafx.stage.Stage
 import model.messages._
 import model.utility.Utility
-import view.MainViewController
+import view.{LoadingDialog, MainViewController}
 
 class PreGUIActor extends Actor {
   private val restClient = ActorSystem.create(Utility.SYSTEM_NAME).actorOf(Props(new RestClient()))
   private var mainStage: Stage = _
   private var userIdChosen: String = ""
   private var userName: String = ""
+  private val loadingDialog: LoadingDialog = new LoadingDialog
 
   override def receive: Receive = {
     case UserSelected(userId, primaryStage) =>
       this.mainStage = primaryStage
       this.userIdChosen = userId
+      Utility.setUpDialog(loadingDialog)
+      Utility.showDialog(loadingDialog)
       this.restClient.tell(UserMsg(userId), self)
 
-    case UserRes (user) => loadGUI(user)
+    case UserRes (user) =>
+      Utility.closeDialog(loadingDialog)
+      loadGUI(user)
 
     case ErrorUserReq(_) => Platform.runLater(() => {
+      Utility.closeDialog(loadingDialog)
       val yesToNewAccount = this.createAlertUserNotExistent()
       if(yesToNewAccount) {
         this.createAlertNewAccount()
       }
     })
-    case OKSetUserMsg(user) => loadGUI(user)
-    case ErrorChatsReq(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chats", detail))
-    case ErrorSetUser(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("User", detail))
+    case OKSetUserMsg(user) =>
+      Utility.closeDialog(loadingDialog)
+      loadGUI(user)
+    case ErrorChatsReq(detail) =>
+      Utility.closeDialog(loadingDialog)
+      Platform.runLater(() => Utility.createErrorAlertDialog("Chats", detail))
+    case ErrorSetUser(detail) =>
+      Utility.closeDialog(loadingDialog)
+      Platform.runLater(() => Utility.createErrorAlertDialog("User", detail))
   }
 
 
@@ -95,6 +107,7 @@ class PreGUIActor extends Actor {
     if(result.isPresent) {
       this.userName = name.getText()
       this.userIdChosen = userId.getText()
+      Utility.showDialog(loadingDialog)
       this.restClient.tell(SetUserMsg(new User(userIdChosen, userName)), self)
     }
   }

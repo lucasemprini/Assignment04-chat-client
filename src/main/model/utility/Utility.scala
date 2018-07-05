@@ -1,7 +1,9 @@
 package model.utility
 
+import javafx.application.Platform
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
+import view.LoadingDialog
 
 object Utility {
   def createErrorAlertDialog(what: String, detail: String): Unit = {
@@ -11,6 +13,11 @@ object Utility {
     alert.setContentText(detail)
     alert.showAndWait()
   }
+
+  def setUpDialog(loadingDialog: LoadingDialog): Unit = Platform.runLater(() => loadingDialog.setupDialog())
+  def showDialog(loadingDialog: LoadingDialog): Unit = Platform.runLater(() => loadingDialog.getDialogStage.show())
+  def closeDialog(loadingDialog: LoadingDialog): Unit = Platform.runLater(() => loadingDialog.getDialogStage.close())
+
   val SYSTEM_NAME: String = "MySystem"
   val LAYOUT_PATH = "/view/view.fxml"
   val WINDOW_TITLE = "BETTER ACTORS CHAT"
