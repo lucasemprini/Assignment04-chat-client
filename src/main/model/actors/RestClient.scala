@@ -9,7 +9,8 @@ import io.vertx.scala.ext.web.client
 import io.vertx.scala.ext.web.client.WebClient
 import model.actors.RestClient._
 import model.messages._
-import model.{ChatWrapper, Log}
+import model.ChatWrapper
+import model.utility.Log
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

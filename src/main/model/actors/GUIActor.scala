@@ -12,7 +12,8 @@ import javafx.scene.paint.Color
 import javafx.util.Duration
 import model.actors.GUIActor.image
 import model.messages._
-import model.{ChatWrapper, Log, Utility}
+import model.utility.{Log, Utility}
+import model.ChatWrapper
 import view.LoadingDialog
 
 import scala.collection.mutable

@@ -8,9 +8,10 @@ import javafx.scene.paint.Color
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
 import javafx.scene.input.MouseEvent
-import model.{ChatWrapper, Utility}
+import model.ChatWrapper
 import model.actors.GUIActor
 import model.messages._
+import model.utility.Utility
 
 import scala.collection.mutable
 

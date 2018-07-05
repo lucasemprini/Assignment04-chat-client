@@ -12,8 +12,8 @@ import javafx.scene.control.ButtonBar.ButtonData
 import javafx.scene.control._
 import javafx.scene.layout.{AnchorPane, GridPane}
 import javafx.stage.Stage
-import model.Utility
 import model.messages._
+import model.utility.Utility
 import view.MainViewController
 
 class PreGUIActor extends Actor {

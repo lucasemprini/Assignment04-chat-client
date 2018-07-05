@@ -1,4 +1,4 @@
-package model
+package model.utility
 
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
