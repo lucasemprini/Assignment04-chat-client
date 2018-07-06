@@ -14,4 +14,5 @@ class ChatWrapper(val chatModel: Chat, val members: Seq[User], var actor: ActorR
 
   def this(chatModel: Chat) = this(chatModel, Seq[User](), ActorRef.noSender, false)
 
+  def addMember(user: User) = members :+ user
 }

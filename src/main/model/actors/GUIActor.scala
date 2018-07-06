@@ -14,7 +14,7 @@ import model.ChatWrapper
 import model.actors.GUIActor.image
 import model.messages._
 import model.utility.{Log, Utility}
-import view.{LoadingDialog, MainViewController}
+import view.LoadingDialog
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -77,13 +77,13 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
 
     case NewChatButtonMsg(_, chatName) =>
       Utility.showDialog(loadingDialog)
-      restClient.tell(GetNewChatId(chatName), self)
+      restClient ! GetNewChatId(chatName)
     case ErrorNewChatId(detail) =>
       Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case NewChatIdRes(chatId, chatName) =>
       val newChatModel = new Chat(chatId, chatName, ListBuffer.empty)
-      this.restClient.tell(SetChatMsg(newChatModel, currentUser), self)
+      this.restClient ! SetChatMsg(newChatModel, currentUser)
     case ErrorSetChat(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkSetChatMsg(chat) =>
       this.restClient ! AddChatToUserMsg(currentUser, chat)
@@ -103,7 +103,16 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkAddChatToUserMsg(_, _, chat) =>
       Utility.closeDialog(loadingDialog)
-      Platform.runLater(() => chat.members :+ currentUser)
+      Platform.runLater(() => {
+        val index = chats.indexOf(chat)
+        chats.remove(chat)
+        chat.addMember(currentUser)
+        println(chat.members)
+
+        //TODO NON FA ADD MA PERCHé?????????????????????????????????????????
+
+        chats.add(index, chat)
+      })
 
     case RemoveChatButtonMsg(removeWho) =>
       Utility.showDialog(loadingDialog)
