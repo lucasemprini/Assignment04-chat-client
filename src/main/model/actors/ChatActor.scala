@@ -1,6 +1,5 @@
 package model.actors
 
-import java.awt.{Image, Toolkit, TrayIcon}
 import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorSystem, Props}
@@ -21,12 +20,15 @@ object ChatActor {
   var PASSWORD: Option[String] = Some("")
 }
 
-class ChatActor(val chatId: String, val chatName: String, val user: User, val onMessageReceived: (String, String) => Unit) extends Actor {
+class ChatActor(val chatId: String, val chatName: String, val user: User,
+                val onMessageReceived: (String, String) => Unit,
+                val onChatDeleted: String => Unit) extends Actor {
 
   implicit val akkaSystem: ActorSystem = akka.actor.ActorSystem()
 
-  val channel: String = "chat." + chatId
-  val channels = Seq(channel)
+  val chatChannel: String = "chat." + chatId
+  val deletedChat: String = "chatDeleted"
+  val channels = Seq(chatChannel, deletedChat)
   val patterns = Seq()
 
 
@@ -34,7 +36,7 @@ class ChatActor(val chatId: String, val chatName: String, val user: User, val on
   PORT = System.getenv("REDIS_PORT").toInt
   PASSWORD = Some(System.getenv("REDIS_PW"))
 
-  akkaSystem.actorOf(Props(classOf[SubscribeActor], channels, patterns, onMessageReceived))
+  akkaSystem.actorOf(Props(classOf[SubscribeActor], channels, patterns, onMessageReceived, onChatDeleted))
 
   override def receive: Receive = {
     case SendMessage(msg: String, chat: ChatWrapper) =>
@@ -44,7 +46,7 @@ class ChatActor(val chatId: String, val chatName: String, val user: User, val on
         val complexMsg = Json.emptyObj()
         complexMsg.put(SENDER, user.getId)
         complexMsg.put(MSG, msg)
-        redis.publish(channel, complexMsg.encode()).map(_ => {
+        redis.publish(chatChannel, complexMsg.encode()).map(_ => {
           redis.quit().map(_ => {
             redis.stop()
           })
@@ -61,7 +63,9 @@ class ChatActor(val chatId: String, val chatName: String, val user: User, val on
 }
 
 
-class SubscribeActor(channels: Seq[String] = Nil, patterns: Seq[String] = Nil, onMessageReceived: (String, String) => Unit)
+class SubscribeActor(channels: Seq[String] = Nil, patterns: Seq[String] = Nil,
+                     onMessageReceived: (String, String) => Unit,
+                     onChatDeleted: String => Unit)
   extends RedisSubscriberActor(
     new InetSocketAddress(HOST, PORT),
     channels,
@@ -76,14 +80,22 @@ class SubscribeActor(channels: Seq[String] = Nil, patterns: Seq[String] = Nil, o
 
   def onMessage(message: Message) {
 
-
-    val complexMsg = Json.fromObjectString(message.data.utf8String)
-    var sender = complexMsg.getString(SENDER)
-    if (sender == null) sender = "unknown"
-    val msg = complexMsg.getString(MSG)
+    message.channel match {
+      case "chatDeleted" =>
+        onChatDeleted(message.data.utf8String)
 
 
-    onMessageReceived(msg, sender)
+      case _ =>
+        val complexMsg = Json.fromObjectString(message.data.utf8String)
+        var sender = complexMsg.getString(SENDER)
+        if (sender == null) sender = "unknown"
+        val msg = complexMsg.getString(MSG)
+
+
+        onMessageReceived(msg, sender)
+    }
+
+
   }
 
   def onPMessage(pmessage: PMessage) {

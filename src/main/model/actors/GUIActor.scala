@@ -10,10 +10,10 @@ import javafx.scene.control.Label
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.util.Duration
+import model.ChatWrapper
 import model.actors.GUIActor.image
 import model.messages._
 import model.utility.{Log, Utility}
-import model.ChatWrapper
 import view.LoadingDialog
 
 import scala.collection.mutable
@@ -28,23 +28,12 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
                var currentChat: ObservableList[Message], val actorLabel: Label, var currentUser: User,
                val restClient: ActorRef) extends Actor {
 
-  //TODO / Ci ho messo le mani... poi ti spiego ahah
-  /*if (SystemTray.isSupported) {
-    val tray = SystemTray.getSystemTray
-
-    trayIcon.setImageAutoSize(true)
-
-    try {
-      tray.add(trayIcon)
-    } catch {
-      case ex: Exception => println(ex.printStackTrace())
-    }
-  }*/
-
   private val loadingDialog: LoadingDialog = new LoadingDialog
+
   override def receive(): Receive = {
     case SetupViewMsg() =>
       restClient.tell(UserChatsMsg(currentUser, self), self)
+      restClient ! GetAllChats()
       Utility.setUpDialog(loadingDialog)
       Utility.showDialog(loadingDialog)
     case ErrorUserReq(detail) =>
@@ -52,36 +41,18 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       Platform.runLater(() => Utility.createErrorAlertDialog("User", detail))
     case UserRes(user) =>
       currentUser = user
-      this.currentUser.chats.foreach(c => {
-        this.restClient.tell(GetChatMsg(c), self)
+
+    case OKGetAllChats(chatsId) =>
+      chatsId foreach (chatId => {
+        restClient ! GetChatMsg(chatId)
       })
+
     case ErrorChatReq(detail) =>
       Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case ChatRes(chatModelObject) =>
       Utility.closeDialog(loadingDialog)
-      //TODO / Ci ho messo le mani
-      //Ho fatto in modo che all'ottenimento di una chat viene impostato il suo corrispondente chat actor a cui passo anche la funzione da esegui
-      //quando quella chat riceve un messaggio
-      chatModelObject.actor = context.actorOf(Props(new ChatActor(chatModelObject.chatModel.getId,
-        chatModelObject.chatModel.getTitle, currentUser, (msg, sender) => {
-          Platform.runLater(() => {
-            var popupMsg: String = ""
-            if (msg.length <= 20) {
-              popupMsg = msg
-            } else {
-              popupMsg = msg.substring(0, 20).concat("...")
-            }
-            val tray = new TrayNotification("New message! Chat: "
-                + chatModelObject.chatModel.getTitle,
-              currentUser.getName + " says: " + msg, Notifications.INFORMATION)
-            tray.setAnimation(Animations.POPUP)
-            tray.setImage(image)
-            tray.showAndDismiss(Duration.seconds(4))
-            //trayIcon.displayMessage("New message! Chat: " + chatModelObject.chatModel.getTitle, msg, TrayIcon.MessageType.NONE)
-            this.mapOfChats(chatModelObject).add(new Message(System.currentTimeMillis(), msg, sender))
-          })
-        })))
+      chatModelObject.actor = createChatActor(chatModelObject)
       Platform.runLater(() => {
 
         if (!this.chats.contains(chatModelObject)) this.chats.add(chatModelObject)
@@ -91,19 +62,14 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         }
       })
 
-    //TODO / Ci ho messo le mani
     case SendButtonMsg(message, listOfMessages, sender) =>
       Utility.showDialog(loadingDialog)
       sender.actor ! SendMessage(message, sender)
 
-    //TODO / Ci ho messo le mani
-    //E' giusto non fare nulla perchè il messaggio sarà ricevuto dal subscriber che lo gestirà e lo visualizza,
-    //Si avrebbe lo stesso messaggio due volte se gestito anche qui l'invio
     case OKSendMessage(message, chat) =>
       Log.debug("Messaggio correttamente inviato")
       Utility.closeDialog(loadingDialog)
 
-    //TODO / Ci ho messo le mani
     case ErrorOnSendMessage() =>
       println("ERROR / Impossibile inviare il messaggio")
       Utility.closeDialog(loadingDialog)
@@ -122,24 +88,7 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       this.restClient ! AddChatToUserMsg(currentUser, chat)
       Utility.closeDialog(loadingDialog)
       Platform.runLater(() => {
-        //TODO / Ci ho messo le mani
-        //Ho modificato la creazione del chat actor
-        chat.actor = context.actorOf(Props(new ChatActor(chat.chatModel.getId, chat.chatModel.getTitle, currentUser, (msg, msgSender) => {
-          Platform.runLater(() => {
-            var popupMsg: String = ""
-            if (msg.length <= 30) {
-              popupMsg = msg
-            } else {
-              popupMsg = msg.substring(0, 27).concat("...")
-            }
-            val tray = new TrayNotification("New message! Chat: " + chat.chatModel.getTitle,
-              currentUser.getName + " says: " + msg, Notifications.INFORMATION)
-            tray.setAnimation(Animations.POPUP)
-            tray.setImage(image)
-            tray.showAndDismiss(Duration.seconds(4))
-            this.mapOfChats(chat).add(new Message(System.currentTimeMillis(), msg, msgSender))
-          })
-        })))
+        chat.actor = createChatActor(chat)
         this.mapOfChats += (chat -> FXCollections.observableArrayList[Message])
         this.chats.add(chat)
 
@@ -150,8 +99,8 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       restClient ! AddChatToUserMsg(currentUser, toJoin)
     case ErrorAddChatToUser(detail) =>
       Utility.closeDialog(loadingDialog)
-      Platform.runLater(()=> Utility.createErrorAlertDialog("Chat", detail))
-    case OkAddChatToUserMsg(_,_, chat) =>
+      Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
+    case OkAddChatToUserMsg(_, _, chat) =>
       Utility.closeDialog(loadingDialog)
       Platform.runLater(() => chat.members :+ currentUser)
 
@@ -163,12 +112,9 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkRemoveChatToUserMsg(chat, _, _) =>
       Utility.closeDialog(loadingDialog)
-      Platform.runLater(() => {
-        this.chats.remove(chat)
-        this.currentChat.clear()
-        this.mapOfChats -= chat
-        context.stop(chat.actor)
-      })
+      currentUser.chats -= chat.chatModel.getId
+      //TODO rimuovere solo dalla chat dell'utente
+
 
     case ChatSelectedMSg(selected) =>
       Platform.runLater(() => {
@@ -176,5 +122,43 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         this.actorLabel.setTextFill(Color.BLACK)
         this.actorLabel.setText("Write on chat \"" + selected.chatModel.getTitle + "\"!")
       })
+  }
+
+  def createChatActor(chat: ChatWrapper): ActorRef = {
+    context.actorOf(Props(new ChatActor(chat.chatModel.getId,
+      chat.chatModel.getTitle, currentUser, (msg, sender) => {
+        Platform.runLater(() => {
+          if (!sender.equals(currentUser.getId)) {
+            var popupMsg: String = ""
+            if (msg.length <= 20) {
+              popupMsg = msg
+            } else {
+              popupMsg = msg.substring(0, 20).concat("...")
+            }
+            val tray = new TrayNotification("New message! Chat: "
+              + chat.chatModel.getTitle,
+              sender + ": " + msg, Notifications.INFORMATION)
+            tray.setAnimation(Animations.POPUP)
+            tray.setImage(image)
+            tray.showAndDismiss(Duration.seconds(4))
+          }
+          mapOfChats(chat).add(new Message(System.currentTimeMillis(), msg, sender))
+        })
+      }, chatId => {
+        mapOfChats.keys.foreach(chat => {
+          if (chat.chatModel.getId.equals(chatId)) {
+            Platform.runLater(() => {
+              this.chats.remove(chat)
+              this.currentChat.clear()
+              this.mapOfChats -= chat
+              context.stop(chat.actor)
+              val tray = new TrayNotification("Cancellata la chat: " + chatId + "/" + chat.chatModel.getTitle,
+                "Tutti gli utenti si sono ritirati, la chat è stata eliminata", Notifications.NOTICE)
+              tray.setAnimation(Animations.POPUP)
+              tray.showAndDismiss(Duration.seconds(4))
+            })
+          }
+        })
+      })))
   }
 }

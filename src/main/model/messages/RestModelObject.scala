@@ -34,7 +34,7 @@ class User(id: String,
            name: String) extends RestObject {
   def this(user: User) = this(user.getId, user.getName)
 
-  val chats: ListBuffer[String] = ListBuffer()
+  val chats: mutable.Set[String] = mutable.HashSet()
 
   def getId: String = id
 
