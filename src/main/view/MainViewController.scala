@@ -1,5 +1,7 @@
 package view
 
+import java.util.stream.Collectors
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.collections.{FXCollections, ObservableList}
@@ -25,7 +27,6 @@ object MainViewController {
   private val DIALOG_PREF_HEIGHT = 120
   private val DIALOG_PREF_WIDTH = 280
   private val LABEL_DEFAULT_TEXT = "Select a chat where to send a message:"
-  private val LABEL_JOIN_TEXT = "Join this chat!"
   private val LABEL_DEFAULT_COLOR = Color.valueOf("#bcb2b2")
   private val GLOBAL_CHATS = "GLOBAL CHATS"
   private val MY_CHATS = "MY CHATS - "
@@ -99,6 +100,7 @@ class MainViewController {
     * Metodo che setta la choiceBox e il relativo Listener.
     */
   private def setChoiceBox(): Unit = {
+    val globalChats = chatList.getItems
     this.choiceBox.setPrefWidth(100)
     this.choiceBox.setStyle(MainViewController.CHOICE_BOX_FONT)
     this.choiceBox.setItems(FXCollections.observableArrayList[String](
@@ -108,7 +110,19 @@ class MainViewController {
       override def changed(observableValue: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         println(choiceBox.getItems.get(newValue.asInstanceOf[Integer]))
         if(choiceBox.getItems.get(newValue.asInstanceOf[Integer]) == (MainViewController.MY_CHATS + user.getName)) {
-          chatList.getItems.stream().filter(c => c.members.contains(user))
+          val myChats = FXCollections.observableArrayList[ChatWrapper]()
+          chatList.getItems
+            .stream()
+            .forEach(i => {
+              if (Utility.chatContainsUser(i, user)) myChats.add(i)
+            })
+          chatList.setItems(myChats)
+          guiActor ! UpdateObservable(myChats)
+        } else {
+          if(chatList.getItems != globalChats) {
+            chatList.setItems(globalChats)
+            guiActor ! UpdateObservable(globalChats)
+          }
         }
       }
     })
@@ -122,8 +136,9 @@ class MainViewController {
     *                    il bottone Remove a areDisabled.
     */
   private def setViewComponents(areDisabled: Boolean, areWeInSend: Boolean, isChatMine: Boolean): Unit = {
-    this.sendButton.setVisible(!isChatMine)
-    this.joinChatButton.setVisible(isChatMine)
+
+    this.sendButton.setVisible(isChatMine)
+    this.joinChatButton.setVisible(!isChatMine)
     this.sendButton.setDisable(areDisabled)
     this.textArea.clear()
     if(isChatMine) {
@@ -131,11 +146,10 @@ class MainViewController {
       else this.removeButton.setDisable(areDisabled)
     } else {
       this.joinChatButton.setDisable(areDisabled)
-      this.labelActorInfo.setText(MainViewController.LABEL_JOIN_TEXT)
     }
-    this.textArea.setDisable(areDisabled)
     this.labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
+    this.textArea.setDisable(areDisabled)
   }
 
   /**
@@ -179,28 +193,28 @@ class MainViewController {
     })
 
     this.chatList.setOnMouseClicked((_: MouseEvent) => {
-        val currentChat = this.chatList.getSelectionModel.getSelectedItem
-        if (!this.chatList.getItems.isEmpty && currentChat != null) {
+      val currentChat = this.chatList.getSelectionModel.getSelectedItem
+      val isCurrentChatMine =  Utility.chatContainsUser(currentChat, user)
+      if (!this.chatList.getItems.isEmpty && currentChat != null) {
+        this.invokeGuiActorForSelectedChat(currentChat, isCurrentChatMine)
+        this.setViewComponents(areDisabled = false, areWeInSend = false, isCurrentChatMine)
+        this.listOfMessages.setItems(this.mapOfChats(currentChat))
 
-          this.invokeGuiActorForSelectedChat(currentChat)
-          this.setViewComponents(areDisabled = false, areWeInSend = false, currentChat.members.contains(user))
-          this.listOfMessages.setItems(this.mapOfChats(currentChat))
+        this.sendButton.setOnAction((_: ActionEvent) => {
+          this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
+          this.setViewComponents(areDisabled = true, areWeInSend = true,isCurrentChatMine)
+        })
 
-          this.sendButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
-            this.setViewComponents(areDisabled = true, areWeInSend = true, currentChat.members.contains(user))
-          })
+        this.joinChatButton.setOnAction((_: ActionEvent) => {
+          this.invokeGuiActorForJoinMsg(currentChat)
+          this.setViewComponents(areDisabled = true, areWeInSend = false, isCurrentChatMine)
+        })
 
-          this.joinChatButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForJoinMsg(currentChat)
-            this.setViewComponents(areDisabled = true, areWeInSend = false, currentChat.members.contains(user))
-          })
-
-          this.removeButton.setOnAction((_: ActionEvent) => {
-            this.invokeGuiActorForRemoveChat(currentChat)
-            this.setViewComponents(areDisabled = true, areWeInSend = false, currentChat.members.contains(user))
-          })
-        }
+        this.removeButton.setOnAction((_: ActionEvent) => {
+          this.invokeGuiActorForRemoveChat(currentChat)
+          this.setViewComponents(areDisabled = true, areWeInSend = false, isCurrentChatMine)
+        })
+      }
     })
   }
 
@@ -211,7 +225,7 @@ class MainViewController {
     * @param chatName il nome della nuova chat.
     */
   private def invokeGuiActorForAddChat(chatName: String): Unit = {
-    guiActor.tell(NewChatButtonMsg(this.chatList.getItems, chatName), ActorRef.noSender)
+    guiActor ! NewChatButtonMsg(this.chatList.getItems, chatName)
   }
 
   /**
@@ -220,7 +234,7 @@ class MainViewController {
     * @param toRemove la chat da rimuovere.
     */
   private def invokeGuiActorForRemoveChat(toRemove: ChatWrapper): Unit = {
-    guiActor.tell(RemoveChatButtonMsg(toRemove), ActorRef.noSender)
+    guiActor ! RemoveChatButtonMsg(toRemove)
   }
 
   /**
@@ -230,7 +244,7 @@ class MainViewController {
     * @param msg  il messaggio da inviare.
     */
   private def invokeGuiActorForSendMsg(currentChat: ChatWrapper, msg: String): Unit = {
-    guiActor.tell(SendButtonMsg(msg, this.mapOfChats(currentChat), currentChat), ActorRef.noSender)
+    guiActor ! SendButtonMsg(msg, this.mapOfChats(currentChat), currentChat)
   }
 
   /**
@@ -238,12 +252,12 @@ class MainViewController {
     *
     * @param currentChat la chat selezionata.
     */
-  private def invokeGuiActorForSelectedChat(currentChat: ChatWrapper): Unit = {
-    guiActor.tell(ChatSelectedMSg(currentChat), ActorRef.noSender)
+  private def invokeGuiActorForSelectedChat(currentChat: ChatWrapper, isMine: Boolean): Unit = {
+    guiActor ! ChatSelectedMSg(currentChat, isMine)
   }
 
   private def invokeGuiActorForJoinMsg(currentChat: ChatWrapper): Unit = {
-    //TODO
+    guiActor ! JoinButtonMsg(currentChat)
   }
 }
 

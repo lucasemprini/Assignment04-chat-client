@@ -15,9 +15,11 @@ final case class NewChatButtonMsg(listOfChats: ObservableList[ChatWrapper], chat
 
 final case class RemoveChatButtonMsg(removeWho: ChatWrapper)
 
-final case class ChatSelectedMSg(selected: ChatWrapper)
+final case class ChatSelectedMSg(selected: ChatWrapper, isMine: Boolean)
 
 final case class SetupViewMsg()
+
+final case class UpdateObservable(observableList: ObservableList[ChatWrapper])
 
 final case class GUIAcknowledgeMsg(message: String, sender: ActorRef)
 

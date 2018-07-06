@@ -42,7 +42,16 @@ class User(id: String,
 
   def addChat(chat: String): Unit = chats += chat
 
+  def canEqual(a: Any): Boolean = a.isInstanceOf[User]
+
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: User => that.canEqual(this) && this.id == that.getId && this.name == that.getName && this.chats == that.chats
+      case _ => false
+    }
+
   override def toString: String = name
+
 }
 
 class Message(timestamp: Long,

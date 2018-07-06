@@ -14,17 +14,18 @@ import model.ChatWrapper
 import model.actors.GUIActor.image
 import model.messages._
 import model.utility.{Log, Utility}
-import view.LoadingDialog
+import view.{LoadingDialog, MainViewController}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object GUIActor {
   val image: Image = new Image("/chat.png")
+  private val LABEL_JOIN_TEXT = "Join this chat!"
 }
 
 
-class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ChatWrapper, ObservableList[Message]],
+class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.Map[ChatWrapper, ObservableList[Message]],
                var currentChat: ObservableList[Message], val actorLabel: Label, var currentUser: User,
                val restClient: ActorRef) extends Actor {
 
@@ -116,12 +117,18 @@ class GUIActor(val chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       //TODO rimuovere solo dalla chat dell'utente
 
 
-    case ChatSelectedMSg(selected) =>
+    case ChatSelectedMSg(selected, isMine) =>
       Platform.runLater(() => {
         this.currentChat = mapOfChats(selected)
-        this.actorLabel.setTextFill(Color.BLACK)
-        this.actorLabel.setText("Write on chat \"" + selected.chatModel.getTitle + "\"!")
+        if(isMine) {
+          this.actorLabel.setTextFill(Color.BLACK)
+          this.actorLabel.setText("Write on chat \"" + selected.chatModel.getTitle + "\"!")
+        } else {
+          this.actorLabel.setTextFill(Color.BLACK)
+          this.actorLabel.setText(GUIActor.LABEL_JOIN_TEXT)
+        }
       })
+    case UpdateObservable(listOfChats) => this.chats = listOfChats
   }
 
   def createChatActor(chat: ChatWrapper): ActorRef = {
