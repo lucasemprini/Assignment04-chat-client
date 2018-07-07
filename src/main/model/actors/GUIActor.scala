@@ -86,7 +86,7 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       this.restClient ! SetChatMsg(newChatModel, currentUser)
     case ErrorSetChat(detail) => Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkSetChatMsg(chat) =>
-      this.restClient ! AddChatToUserMsg(currentUser, chat)
+      this.restClient ! AddChatToUserMsg(currentUser, chat, joining = false)
       Utility.closeDialog(loadingDialog)
       Platform.runLater(() => {
         chat.actor = createChatActor(chat)
@@ -97,7 +97,7 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
 
     case JoinButtonMsg(toJoin) =>
       Utility.showDialog(loadingDialog)
-      restClient ! AddChatToUserMsg(currentUser, toJoin)
+      restClient ! AddChatToUserMsg(currentUser, toJoin, joining = true)
     case ErrorAddChatToUser(detail) =>
       Utility.closeDialog(loadingDialog)
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
@@ -119,8 +119,22 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
       Platform.runLater(() => Utility.createErrorAlertDialog("Chat", detail))
     case OkRemoveChatToUserMsg(chat, _, _) =>
       Utility.closeDialog(loadingDialog)
-      currentUser.chats -= chat.chatModel.getId
-      //TODO rimuovere solo dalla chat dell'utente
+      Platform.runLater(() => {
+        if (chat.members.size > 1) {
+          val index = chats.indexOf(chat)
+          chats.remove(chat)
+          println(chat.members)
+          chat.removeMember(currentUser)
+          println(chat.members)
+          chats.add(index, chat)
+        } else {
+          chat.members = Seq.empty
+          chats.remove(chat)
+          currentUser.chats -= chat.chatModel.getId
+          this.currentChat.clear()
+          this.mapOfChats -= chat
+        }
+      })
 
 
     case ChatSelectedMSg(selected, isMine) =>
@@ -164,6 +178,7 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
               this.chats.remove(chat)
               this.currentChat.clear()
               this.mapOfChats -= chat
+              //TODO E' QUI IL PROBLEMA?
               context.stop(chat.actor)
               val tray = new TrayNotification("Cancellata la chat: " + chatId + "/" + chat.chatModel.getTitle,
                 "Tutti gli utenti si sono ritirati, la chat è stata eliminata", Notifications.NOTICE)

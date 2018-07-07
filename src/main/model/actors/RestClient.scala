@@ -128,7 +128,7 @@ class RestClient extends Actor {
         actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
       })
 
-    case AddChatToUserMsg(user, chat) =>
+    case AddChatToUserMsg(user, chat, joining) =>
       val actSender: ActorRef = sender()
       val params = new mutable.HashMap[String, String]()
       params.put("chat", chat.chatModel.getId)
@@ -147,10 +147,9 @@ class RestClient extends Actor {
         if (!body.getBoolean(RESULT)) {
           addChatDetails = body.getString(DETAILS)
         }
-
-        actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails, chat)
+        if(joining) actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails, chat)
       }, _ => {
-        actSender ! ErrorAddChatToUser("Impossibile associare la chat: " + chat.chatModel.getId + " all'utente: " + user.getId)
+        if (joining) actSender ! ErrorAddChatToUser("Impossibile associare la chat: " + chat.chatModel.getId + " all'utente: " + user.getId)
       })
 
     case RemoveChatToUserMsg(userId, chat) =>

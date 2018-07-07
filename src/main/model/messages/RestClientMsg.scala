@@ -13,7 +13,7 @@ final case class NewChatIdRes(chatId: String, chatName: String)
 
 final case class UserChatsMsg(user: User, sender: ActorRef = null)
 
-final case class AddChatToUserMsg(user: User, chat: ChatWrapper)
+final case class AddChatToUserMsg(user: User, chat: ChatWrapper, joining: Boolean)
 
 final case class OkAddChatToUserMsg(addChatToUserDetails: String, addUserToChatDetails: String, chat: ChatWrapper)
 
