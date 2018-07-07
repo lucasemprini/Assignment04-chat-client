@@ -30,6 +30,8 @@ object MainViewController {
   private val LABEL_DEFAULT_COLOR = Color.valueOf("#bcb2b2")
   private val GLOBAL_CHATS = "GLOBAL CHATS"
   private val MY_CHATS = "MY CHATS - "
+  private val ABANDON = " Leave Chat -"
+  private val DELETE = "Delete Chat -"
   private val CHOICE_BOX_FONT = "-fx-font: 20px \"Default\";"
   private val LIST_ITEM_FONT = "-fx-font: 16px \"Default\";"
 }
@@ -75,7 +77,7 @@ class MainViewController {
     //this.chatList.setItems()
     this.setGUIActor()
     this.setChoiceBox()
-    this.setViewComponents(areDisabled = true, areWeInSend = false, isChatMine = false)
+    this.setViewComponents(areDisabled = true, areWeInSend = false, isChatMine = false, isChatEmpty = false)
     this.setUpListView()
     this.addButton.setOnAction((_: ActionEvent) => this.setDialogWindow())
   }
@@ -135,17 +137,21 @@ class MainViewController {
     *                    se è false vuol dire che siamo in altre situazioni, quindi setta
     *                    il bottone Remove a areDisabled.
     */
-  private def setViewComponents(areDisabled: Boolean, areWeInSend: Boolean, isChatMine: Boolean): Unit = {
-
+  private def setViewComponents(areDisabled: Boolean, areWeInSend: Boolean, isChatMine: Boolean,
+                                isChatEmpty: Boolean): Unit = {
     this.sendButton.setVisible(isChatMine)
     this.joinChatButton.setVisible(!isChatMine)
+    this.removeButton.setDisable(areDisabled || !isChatMine)
     this.sendButton.setDisable(areDisabled)
     this.textArea.clear()
+
     if(isChatMine) {
       if (areWeInSend) this.textArea.clear()
-      else this.removeButton.setDisable(areDisabled)
+      if(isChatEmpty) this.removeButton.setText(MainViewController.DELETE)
+      else this.removeButton.setText(MainViewController.ABANDON)
     } else {
       this.joinChatButton.setDisable(areDisabled)
+      this.removeButton.setText(MainViewController.DELETE)
     }
     this.labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
@@ -195,24 +201,26 @@ class MainViewController {
     this.chatList.setOnMouseClicked((_: MouseEvent) => {
       val currentChat = this.chatList.getSelectionModel.getSelectedItem
       val isCurrentChatMine =  Utility.chatContainsUser(currentChat, user)
+      val isCurrentChatEmpty = currentChat.members.size == 1
       if (!this.chatList.getItems.isEmpty && currentChat != null) {
         this.invokeGuiActorForSelectedChat(currentChat, isCurrentChatMine)
-        this.setViewComponents(areDisabled = false, areWeInSend = false, isCurrentChatMine)
+        this.setViewComponents(areDisabled = false, areWeInSend = false, isCurrentChatMine, isCurrentChatEmpty)
+
         this.listOfMessages.setItems(this.mapOfChats(currentChat))
 
         this.sendButton.setOnAction((_: ActionEvent) => {
           this.invokeGuiActorForSendMsg(currentChat, this.getTextFromArea)
-          this.setViewComponents(areDisabled = true, areWeInSend = true,isCurrentChatMine)
+          this.setViewComponents(areDisabled = true, areWeInSend = true,isCurrentChatMine, isCurrentChatEmpty)
         })
 
         this.joinChatButton.setOnAction((_: ActionEvent) => {
           this.invokeGuiActorForJoinMsg(currentChat)
-          this.setViewComponents(areDisabled = true, areWeInSend = false, isCurrentChatMine)
+          this.setViewComponents(areDisabled = true, areWeInSend = false, isCurrentChatMine, isCurrentChatEmpty)
         })
 
         this.removeButton.setOnAction((_: ActionEvent) => {
           this.invokeGuiActorForRemoveChat(currentChat)
-          this.setViewComponents(areDisabled = true, areWeInSend = false, isCurrentChatMine)
+          this.setViewComponents(areDisabled = true, areWeInSend = false, isCurrentChatMine, isCurrentChatEmpty)
         })
       }
     })
