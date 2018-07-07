@@ -119,7 +119,7 @@ class RestClient extends Actor {
       POSTReq("/user/" + user.getId, user.queryParams, resBody => {
         val body = resBody.bodyAsString().getOrElse("")
         if (Json.fromObjectString(body).getBoolean(RESULT)) {
-          actSender ! OKSetUserMsg
+          actSender ! OKSetUserMsg(user)
         } else {
           actSender ! ErrorSetUser("Errore durante il salvataggio dei dati dell'utente: " + user.getId)
         }
