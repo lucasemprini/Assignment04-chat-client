@@ -27,7 +27,7 @@ class ChatActor(val chatId: String, val chatName: String, val user: User,
   implicit val akkaSystem: ActorSystem = akka.actor.ActorSystem()
 
   val chatChannel: String = "chat." + chatId
-  val deletedChat: String = "chatDeleted"
+  val deletedChat: String = "chatDeleted." + chatId
   val channels = Seq(chatChannel, deletedChat)
   val patterns = Seq()
 
@@ -77,22 +77,17 @@ class SubscribeActor(channels: Seq[String] = Nil, patterns: Seq[String] = Nil,
   implicit val akkaSystem: ActorSystem = akka.actor.ActorSystem()
 
 
-
   def onMessage(message: Message) {
 
-    message.channel match {
-      case "chatDeleted" =>
-        onChatDeleted(message.data.utf8String)
+    if (message.channel.startsWith("chatDeleted")) {
+      onChatDeleted(message.data.utf8String)
+    } else {
+      val complexMsg = Json.fromObjectString(message.data.utf8String)
+      var sender = complexMsg.getString(SENDER)
+      if (sender == null) sender = "unknown"
+      val msg = complexMsg.getString(MSG)
 
-
-      case _ =>
-        val complexMsg = Json.fromObjectString(message.data.utf8String)
-        var sender = complexMsg.getString(SENDER)
-        if (sender == null) sender = "unknown"
-        val msg = complexMsg.getString(MSG)
-
-
-        onMessageReceived(msg, sender)
+      onMessageReceived(msg, sender)
     }
 
 
