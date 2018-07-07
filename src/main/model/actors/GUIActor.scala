@@ -129,10 +129,7 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
           chats.add(index, chat)
         } else {
           chat.members = Seq.empty
-          chats.remove(chat)
           currentUser.chats -= chat.chatModel.getId
-          this.currentChat.clear()
-          this.mapOfChats -= chat
         }
       })
 
@@ -178,7 +175,6 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
               this.chats.remove(chat)
               this.currentChat.clear()
               this.mapOfChats -= chat
-              //TODO E' QUI IL PROBLEMA?
               context.stop(chat.actor)
               val tray = new TrayNotification("Cancellata la chat: " + chatId + "/" + chat.chatModel.getTitle,
                 "Tutti gli utenti si sono ritirati, la chat è stata eliminata", Notifications.NOTICE)
