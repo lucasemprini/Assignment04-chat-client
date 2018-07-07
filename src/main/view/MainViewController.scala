@@ -1,7 +1,5 @@
 package view
 
-import java.util.stream.Collectors
-
 import akka.actor.{ActorRef, ActorSystem, Props}
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.collections.{FXCollections, ObservableList}
@@ -155,7 +153,7 @@ class MainViewController {
     }
     this.labelActorInfo.setText(MainViewController.LABEL_DEFAULT_TEXT)
     this.labelActorInfo.setTextFill(MainViewController.LABEL_DEFAULT_COLOR)
-    this.textArea.setDisable(areDisabled)
+    this.textArea.setDisable(areDisabled || !isChatMine)
   }
 
   /**
