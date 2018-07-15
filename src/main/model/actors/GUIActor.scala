@@ -63,11 +63,11 @@ class GUIActor(var chats: ObservableList[ChatWrapper], var mapOfChats: mutable.M
         }
       })
 
-    case SendButtonMsg(message, listOfMessages, sender) =>
+    case SendButtonMsg(message, _, sender) =>
       Utility.showDialog(loadingDialog)
       sender.actor ! SendMessage(message, sender)
 
-    case OKSendMessage(message, chat) =>
+    case OKSendMessage(_, _) =>
       Log.debug("Messaggio correttamente inviato")
       Utility.closeDialog(loadingDialog)
 
