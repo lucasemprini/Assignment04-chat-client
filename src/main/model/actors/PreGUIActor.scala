@@ -75,6 +75,7 @@ class PreGUIActor extends Actor {
     val dialog = new Dialog
     dialog.setTitle("Create new Account")
     dialog.setHeaderText("Create your brand new Account!")
+    dialog.setResizable(true)
 
     // Set the button types.
     val loginButtonType = new ButtonType("Create", ButtonData.OK_DONE)
