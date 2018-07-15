@@ -7,14 +7,14 @@ import io.vertx.lang.scala.json.{Json, JsonObject}
 import io.vertx.scala.core.Vertx
 import io.vertx.scala.ext.web.client
 import io.vertx.scala.ext.web.client.WebClient
+import model.ChatWrapper
 import model.actors.RestClient._
 import model.messages._
-import model.ChatWrapper
 import model.utility.Log
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
 
 
@@ -66,6 +66,31 @@ class RestClient extends Actor {
     * Esegue un POST /user/:id
     * POS: Risponde con un messaggio OkSetUserMsg, ciò significa che è andato tutto bene
     * NEG: Risponde con un messaggio ErrorSetUser(details)
+    *
+    *   - AddChatToUserMsg(user)
+    * Esegue un POST /user/:id/chats
+    * POS: Risponde con un messaggio OkAddChatToUserMsg, ciò significa che è andato tutto bene
+    * NEG: Risponde con un messaggio ErrorAddChatToUser
+    *
+    *   - RemoveChatToUserMsg(userId, chat)
+    * Esegue un POST /user/:id/removeChats
+    * POS: Risponde con un messaggio OkRemoveChatToUserMsg, ciò significa che è andato tutto bene
+    * NEG: Risponde con un messaggio ErrorRemoveChatToUser
+    *
+    *   - GetChatMsg(chatId)
+    * Esegue un GET /chats/:chatId
+    * POS: Risponde con un messaggio ChatRes, contenente il chatWrapper e la lista degli utenti, ciò significa che è andato tutto bene
+    * NEG: Risponde con un messaggio ErrorChatReq
+    *
+    *   - GetNewChatId(chatName)
+    * Esegue un GET /chats/new/
+    * POS: Risponde con un messaggio NewChatIdRes, contenente il nuovo id e il titolo della chat, ciò significa che è andato tutto bene
+    * NEG: Risponde con un messaggio ErrorNewChatId
+    *
+    *   - GetAllChats
+    * Esegue un GET /allChats
+    * POS: Risponde con un messaggio OKGetAllChats, con la lista di id delle chat, ciò significa che è andato tutto bene
+    * NEG: Risponde con un messaggio ErrorGetAllChats
     *
     * @return
     */
@@ -147,7 +172,7 @@ class RestClient extends Actor {
         if (!body.getBoolean(RESULT)) {
           addChatDetails = body.getString(DETAILS)
         }
-        if(joining) actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails, chat)
+        if (joining) actSender ! OkAddChatToUserMsg(addChatDetails, addMemberDetails, chat)
       }, _ => {
         if (joining) actSender ! ErrorAddChatToUser("Impossibile associare la chat: " + chat.chatModel.getId + " all'utente: " + user.getId)
       })
@@ -233,24 +258,35 @@ class RestClient extends Actor {
       val actSender: ActorRef = sender()
 
       GETReq("/allChats", resBody => {
-          val data = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
+        val data = Json.fromObjectString(resBody.bodyAsString().getOrElse(""))
 
-          if (data.getBoolean(RESULT)) {
-            var chatsId: Seq[String] = Seq()
+        if (data.getBoolean(RESULT)) {
+          var chatsId: Seq[String] = Seq()
 
-            data.getJsonArray(CHATS).forEach(id => chatsId = chatsId :+ id.toString)
+          data.getJsonArray(CHATS).forEach(id => chatsId = chatsId :+ id.toString)
 
-            actSender ! OKGetAllChats(chatsId)
-          } else {
-            actSender ! ErrorGetAllChats(data.getString(DETAILS))
-          }
+          actSender ! OKGetAllChats(chatsId)
+        } else {
+          actSender ! ErrorGetAllChats(data.getString(DETAILS))
+        }
 
       }, _ => {
-        actSender ! ErrorSetChat("Errore durante la richiesta di tutte le chat")
+        actSender ! ErrorGetAllChats("Errore durante la richiesta di tutte le chat")
       })
 
   }
 
+  /**
+    * Esegue una richiesta POST.
+    * @param uri
+    *            URL relativo
+    * @param params
+    *            Parametri da fornire alla richiesta
+    * @param onSuccess
+    *            Metodo che gestisce la risposta positiva
+    * @param onFail
+    *            Metodo che gestisce la risposta negativa
+    */
   private def POSTReq(uri: String, params: Map[String, String], onSuccess: client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit): Unit = {
     val client = WebClient.create(Vertx.vertx())
     val complexUri = new StringBuffer(uri)
@@ -269,15 +305,26 @@ class RestClient extends Actor {
     val future = if (PORT != 0) client.post(PORT, URL, complexUri.toString) else client.post(URL, complexUri.toString)
     future.sendFuture().onComplete {
       case Success(result) =>
-        Log.debug("Stop <- POST: " +  URL + complexUri.toString)
+        Log.debug("Stop <- POST: " + URL + complexUri.toString)
         onSuccess(result)
       case Failure(cause) =>
-        Log.debug("Stop /w FAIL <- POST: " +  URL + complexUri.toString)
+        Log.debug("Stop /w FAIL <- POST: " + URL + complexUri.toString)
         cause.printStackTrace()
         onFail(cause)
     }
   }
 
+  /**
+    * Esegue una richiesta GET.
+    * @param uri
+    *            URL relativo
+    * @param params
+    *            Parametri da fornire alla richiesta
+    * @param onSuccess
+    *            Metodo che gestisce la risposta positiva
+    * @param onFail
+    *            Metodo che gestisce la risposta negativa
+    */
   private def GETReq(uri: String, onSuccess: client.HttpResponse[Buffer] => Unit, onFail: Throwable => Unit, params: Map[String, String] = null): Unit = {
     val client = WebClient.create(Vertx.vertx())
     val complexUri = new StringBuffer(uri)
@@ -297,10 +344,10 @@ class RestClient extends Actor {
     val future = if (PORT != 0) client.get(PORT, URL, complexUri.toString) else client.get(URL, complexUri.toString)
     future.sendFuture().onComplete {
       case Success(result) =>
-        Log.debug("Stop <- GET: " +  URL + complexUri.toString)
+        Log.debug("Stop <- GET: " + URL + complexUri.toString)
         onSuccess(result)
       case Failure(cause) =>
-        Log.debug("Stop /w FAIL <- GET: " +  URL + complexUri.toString)
+        Log.debug("Stop /w FAIL <- GET: " + URL + complexUri.toString)
         cause.printStackTrace()
         onFail(cause)
     }
