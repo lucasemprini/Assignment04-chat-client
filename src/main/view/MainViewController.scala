@@ -262,6 +262,11 @@ class MainViewController {
     guiActor ! ChatSelectedMSg(currentChat, isMine)
   }
 
+  /**
+    * Metodo che invia un messaggio di JoinButtonMsg al GUIActor.
+    *
+    * @param currentChat la chat selezionata.
+    */
   private def invokeGuiActorForJoinMsg(currentChat: ChatWrapper): Unit = {
     guiActor ! JoinButtonMsg(currentChat)
   }
